@@ -1,3 +1,5 @@
+import { Component } from './constants';
+
 import DescriptionSubscriber from '../components/description/DescriptionSubscriber';
 import StatusSubscriber from '../components/status/StatusSubscriber';
 import GenesSubscriber from '../components/genes/GenesSubscriber';
@@ -12,19 +14,20 @@ import GenomicProfilesSubscriber from '../components/higlass/GenomicProfilesSubs
 import ExpressionHistogramSubscriber from '../components/genes/ExpressionHistogramSubscriber';
 import CellSetExpressionPlotSubscriber from '../components/sets/CellSetExpressionPlotSubscriber';
 
+
 const registry = {
-  description: DescriptionSubscriber,
-  status: StatusSubscriber,
-  genes: GenesSubscriber,
-  cellSets: CellSetsManagerSubscriber,
-  scatterplot: ScatterplotSubscriber,
-  spatial: SpatialSubscriber,
-  heatmap: HeatmapSubscriber,
-  layerController: LayerControllerSubscriber,
-  cellSetSizes: CellSetSizesPlotSubscriber,
-  expressionHistogram: ExpressionHistogramSubscriber,
-  genomicProfiles: GenomicProfilesSubscriber,
-  cellSetExpression: CellSetExpressionPlotSubscriber,
+  [Component.DESCRIPTION]: DescriptionSubscriber,
+  [Component.STATUS]: StatusSubscriber,
+  [Component.GENES]: GenesSubscriber,
+  [Component.CELL_SETS]: CellSetsManagerSubscriber,
+  [Component.SCATTERPLOT]: ScatterplotSubscriber,
+  [Component.SPATIAL]: SpatialSubscriber,
+  [Component.HEATMAP]: HeatmapSubscriber,
+  [Component.LAYER_CONTROLLER]: LayerControllerSubscriber,
+  [Component.CELL_SET_SIZES]: CellSetSizesPlotSubscriber,
+  [Component.GENOMIC_PROFILES]: GenomicProfilesSubscriber,
+  [Component.EXPRESSION_HISTOGRAM]: ExpressionHistogramSubscriber,
+  [Component.CELL_SET_EXPRESSION]: CellSetExpressionPlotSubscriber,
   // The plain higlass component does not abstract away the HiGlass view config,
   // so we probably want to avoid documenting it, only use it for development purposes.
   higlass: HiGlassSubscriber,

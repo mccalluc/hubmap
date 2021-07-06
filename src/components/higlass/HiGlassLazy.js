@@ -21,7 +21,9 @@ const HIGLASS_BUNDLE_URL = `https://unpkg.com/higlass@${HIGLASS_BUNDLE_VERSION}/
 
 
 // Initialize the dynamic __import__() function.
-dynamicImportPolyfill.initialize();
+if (dynamicImportPolyfill) {
+  dynamicImportPolyfill.initialize();
+}
 
 // Register the zarr-multivec plugin data fetcher.
 // References:

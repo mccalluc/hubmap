@@ -1,5 +1,5 @@
 import { getNextScope, fromEntries } from '../utils';
-import { COORDINATION_TYPES } from '../app/state/coordination';
+import { CoordinationType } from '../app/constants';
 
 
 /**
@@ -11,12 +11,16 @@ export class VitessceConfigDatasetFile {
    * @param {string} url The URL to the file.
    * @param {string} dataType The type of data contained in the file.
    * @param {string} fileType The file type.
+   * @param {object|array|null} options An optional object or array
+   * which may provide additional parameters to the loader class
+   * corresponding to the specified fileType.
    */
-  constructor(url, dataType, fileType) {
+  constructor(url, dataType, fileType, options) {
     this.file = {
       url,
       type: dataType,
       fileType,
+      ...(options !== null ? { options } : {}),
     };
   }
 
@@ -49,13 +53,18 @@ export class VitessceConfigDataset {
 
   /**
    * Add a file definition to the dataset.
-   * @param {string} url The URL to the file.
+   * @param {string|undefined} url The URL to the file.
    * @param {string} dataType The type of data contained in the file.
    * @param {string} fileType The file type.
+   * @param {object|array} options An optional object or array
+   * which may provide additional parameters to the loader class
+   * corresponding to the specified fileType.
    * @returns {VitessceConfigDataset} This, to allow chaining.
    */
-  addFile(url, dataType, fileType) {
-    this.dataset.files.push(new VitessceConfigDatasetFile(url, dataType, fileType));
+  addFile(url, dataType, fileType, options = null) {
+    this.dataset.files.push(
+      new VitessceConfigDatasetFile(url, dataType, fileType, options),
+    );
     return this;
   }
 
@@ -115,12 +124,27 @@ export class VitessceConfigView {
     * @param {number} y The y-coordinate of the view in the layout.
     * @param {number} w The width of the view in the layout.
     * @param {number} h The height of the view in the layout.
+    * @returns {VitessceConfigView} This, to allow chaining.
     */
   setXYWH(x, y, w, h) {
     this.view.x = x;
     this.view.y = y;
     this.view.w = w;
     this.view.h = h;
+
+    return this;
+  }
+
+  /**
+   * Set props for this view.
+   * @returns {VitessceConfigView} This, to allow chaining.
+   */
+  setProps(props) {
+    this.view.props = {
+      ...(this.view.props || {}),
+      ...props,
+    };
+    return this;
   }
 
   /**
@@ -233,7 +257,7 @@ export class VitessceConfig {
     const nextUid = (uid || getNextScope(prevDatasetUids));
     const newDataset = new VitessceConfigDataset(nextUid, name, description);
     this.config.datasets.push(newDataset);
-    const [newScope] = this.addCoordination(COORDINATION_TYPES.DATASET);
+    const [newScope] = this.addCoordination(CoordinationType.DATASET);
     newScope.setValue(nextUid);
     return newDataset;
   }
@@ -261,8 +285,8 @@ export class VitessceConfig {
       mapping = null,
     } = options || {};
     const datasetMatches = (
-      this.config.coordinationSpace[COORDINATION_TYPES.DATASET]
-        ? Object.entries(this.config.coordinationSpace[COORDINATION_TYPES.DATASET])
+      this.config.coordinationSpace[CoordinationType.DATASET]
+        ? Object.entries(this.config.coordinationSpace[CoordinationType.DATASET])
         // eslint-disable-next-line no-unused-vars
           .filter(([scopeName, datasetScope]) => datasetScope.cValue === dataset.dataset.uid)
           .map(([scopeName]) => scopeName)
@@ -275,11 +299,11 @@ export class VitessceConfig {
       throw new Error('No coordination scope matching the dataset parameter could be found in the coordination space.');
     }
     const coordinationScopes = {
-      [COORDINATION_TYPES.DATASET]: datasetScope,
+      [CoordinationType.DATASET]: datasetScope,
     };
     const newView = new VitessceConfigView(component, coordinationScopes, x, y, w, h);
     if (mapping) {
-      const [etScope] = this.addCoordination(COORDINATION_TYPES.EMBEDDING_TYPE);
+      const [etScope] = this.addCoordination(CoordinationType.EMBEDDING_TYPE);
       etScope.setValue(mapping);
       newView.useCoordination(etScope);
     }
@@ -411,7 +435,7 @@ export class VitessceConfig {
       });
     });
     Object.keys(config.coordinationSpace).forEach((cType) => {
-      if (cType !== COORDINATION_TYPES.DATASET) {
+      if (cType !== CoordinationType.DATASET) {
         const cObj = config.coordinationSpace[cType];
         vc.config.coordinationSpace[cType] = {};
         Object.entries(cObj).forEach(([cScopeName, cScopeValue]) => {

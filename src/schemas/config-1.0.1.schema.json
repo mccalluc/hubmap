@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/hubmapconsortium/vitessce/#dataset",
+  "$id": "https://github.com/vitessce/vitessce/#dataset",
   "title": "Vitessce data set",
   "type": "object",
   "definitions": {
@@ -439,7 +439,7 @@
                 "type": { "type": "string" },
                 "fileType": { "type": "string" },
                 "url": { "type": "string" },
-                "options": { "oneOf": [{ "$ref": "#/definitions/annDataCellSets" }, { "$ref": "https://github.com/hubmapconsortium/vitessce/#raster" }, { "$ref": "#/definitions/annDataCells" }, { "$ref": "#/definitions/annDataExpressionMatrix" }] },
+                "options": { "oneOf": [{ "$ref": "#/definitions/annDataCellSets" }, { "$ref": "https://github.com/vitessce/vitessce/#raster" }, { "$ref": "#/definitions/annDataCells" }, { "$ref": "#/definitions/annDataExpressionMatrix" }] },
                 "requestInit": { "$ref": "#/definitions/requestInit" }
               }
             }
@@ -955,7 +955,7 @@
                   "description": "If null is provided, no cell will be highlighted initially."
                 },
                 {
-                  "$ref": "https://github.com/hubmapconsortium/vitessce/#cell-sets"
+                  "$ref": "https://github.com/vitessce/vitessce/#cell-sets"
                 }
               ]
             }

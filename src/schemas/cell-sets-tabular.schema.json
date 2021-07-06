@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://github.com/hubmapconsortium/vitessce/#cell-sets-tabular",
+    "$id": "https://github.com/vitessce/vitessce/#cell-sets-tabular",
     "title": "Vitessce cell sets data, tabular format",
     "definitions": {
         "colorArray": {

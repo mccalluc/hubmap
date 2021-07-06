@@ -1,0 +1,160 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+:root {
+  --ifm-color-primary: #49a5b7;
+  --ifm-color-primary-dark: rgb(33, 175, 144);
+  --ifm-color-primary-darker: rgb(31, 165, 136);
+  --ifm-color-primary-darkest: rgb(26, 136, 112);
+  --ifm-color-primary-light: rgb(70, 203, 174);
+  --ifm-color-primary-lighter: rgb(102, 212, 189);
+  --ifm-color-primary-lightest: rgb(146, 224, 208);
+  --ifm-code-font-size: 95%;
+
+  --ifm-navbar-height: 3.0rem;
+
+  --vit-input-foreground: #0451a5;
+  --vit-input-background: #ffffff;
+  --dropzone: #989898;
+  --code-block-background: rgb(246, 248, 250);
+
+  --hero-banner-background: #49a5b7;
+
+  font-family: 'Inter', sans-serif;
+
+}
+
+:root[data-theme='dark'] {
+  --ifm-navbar-background-color: #333;
+  --ifm-footer-background-color: rgb(73, 73, 73);
+  --vit-input-background: #202124;
+  --vit-input-foreground: #9cdcfe;
+  --dropzone: #5f5f60;
+  --code-block-background: rgb(40, 42, 54);
+}
+
+.docusaurus-highlight-code-line {
+  background-color: #DDDFE1;
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+/* If you have a different syntax highlighting theme for dark mode. */
+html[data-theme='dark'] .docusaurus-highlight-code-line {
+  background-color: #1C1D26; /* Color which works with dark mode syntax highlighting theme */
+}
+
+.main-wrapper {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ifm-navbar-background-color);
+}
+
+.vitessce-app {
+  flex: 1;
+}
+
+.vitessce-app .vitessce-container {
+  height: calc(100vh - var(--ifm-navbar-height));
+  width: 100%;
+  overflow: hidden;
+}
+
+.vitessce-container.vitessce-theme-light .card {
+  border: none !important;
+}
+
+.vitessce-container.vitessce-theme-dark .card {
+  border: none !important;
+}
+
+.vitessce-container table * {
+  border: none;
+}
+
+.vitessce-container table tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.monaco-editor {
+  box-shadow: -3px 3px 5px 5px rgba(0,0,0,.06);
+}
+
+.table-concat tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.table-concat td {
+  text-align: center;
+}
+
+div[role='tooltip'] table tr {
+  background-color: transparent;
+  border-top: none;
+}
+
+div[role='tooltip'] table {
+  margin-bottom: 0;
+}
+
+div[role='tooltip'] table td, div[role='tooltip'] table th {
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+
+
+.tableOfContents_node_modules-\@docusaurus-theme-classic-lib-theme-TOC- .table-of-contents__link code {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.codeBlock_node_modules-\@docusaurus-theme-classic-lib-theme-CodeBlock- {
+  overflow-x: scroll;
+  background-color: var(--code-block-background);
+}
+
+.codeBlockLines_node_modules-\@docusaurus-theme-classic-lib-theme-CodeBlock- {
+  overflow-x: auto;
+  float: none;
+}
+
+@media (min-width: 997px) and (max-width: 1320px) {
+  .docItemWrapper_node_modules-\@docusaurus-theme-classic-lib-theme-DocPage- {
+    margin: 0;
+  }
+}
+
+@media (min-width: 997px) {
+  .docMainContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocPage- {
+    width: calc(100% - var(--doc-sidebar-width));
+  }
+}
+
+@media (max-width: 997px) {
+  .docMainContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocPage- {
+    max-width: 100%;
+  }
+}
+
+.ar-16x9 {
+  aspect-ratio: 16 / 9;
+}
+
+.hero__title {
+  max-width: 400px;
+  width: 90%;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/hubmapconsortium/vitessce/#molecules",
+  "$id": "https://github.com/vitessce/vitessce/#molecules",
   "title": "Vitessce molecule data",
   "type": "object",
   "definitions": {

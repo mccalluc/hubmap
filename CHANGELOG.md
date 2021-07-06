@@ -1,6 +1,7 @@
 ## In Progress
 
 ### Added
+- Added a new documentation site.
 
 ### Changed
 - Change bitmask rendering to only display a unique pixel value instead of blending.

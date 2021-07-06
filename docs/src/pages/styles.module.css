@@ -1,0 +1,347 @@
+/* stylelint-disable docusaurus/copyright-header */
+
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 0.75rem 1rem 0rem 1rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+
+  background-color: var(--hero-banner-background);
+}
+
+.heroContainer {
+  margin: 1rem !important;
+}
+
+@media screen and (max-width: 966px) {
+  .heroBanner {
+    padding: 0.5rem 0.5rem 0rem 0.5rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button {
+  margin: 0 1em;
+}
+
+.features {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background-color: var(--ifm-navbar-background-color);
+  padding: var(--ifm-footer-padding-vertical) var(--ifm-footer-padding-horizontal);
+}
+
+@media (max-width: 996px) {
+  .features {
+      --ifm-footer-padding-horizontal: 0;
+  }
+}
+
+.featureImage {
+  height: 200px;
+  width: 200px;
+}
+
+.dropzone {
+  padding: 0.5rem 1rem;
+  margin: 0.5rem 0 0.5rem 20px;
+  position: relative;
+  display: block;
+  margin-left: 20px;
+  box-sizing: border-box;
+  border-radius: 0px;
+  border: 2px dashed var(--dropzone);
+  color: var(--dropzone);
+  cursor: pointer;
+  text-align: center;
+  box-shadow: -3px 3px 5px 5px rgba(0,0,0,.06);
+}
+
+.dropzoneInfo {
+  width: 50%;
+  height: 25vh;
+  margin-top: 25vh;
+  margin-left: 25%;
+}
+
+.viewConfigEditor {
+  margin-left: 20px;
+  margin-right: 20px;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+.tryButtonJSON {
+  position: absolute;
+  width: 170px;
+  height: 40px;
+  left: calc(50% - 85px);
+  top: calc(50% - 20px);
+  
+  border: 2px solid var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary);
+  text-decoration: none !important;
+  text-transform: uppercase;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 5px 10px;
+  cursor: pointer;
+  box-shadow: -3px 3px 9px 9px rgba(0,0,0,.1);
+}
+
+.viewConfigPreviewJSCode {
+  overflow: visible;
+  background-color: transparent !important;
+  font: 75%/var(--ifm-pre-line-height) var(--ifm-font-family-monospace);
+}
+.viewConfigPreviewErrorSplit {
+  margin-left: 10px;
+  height: 60vh;
+  position: relative;
+  width: 100%;
+}
+.viewConfigPreviewScroll {
+  overflow-y: scroll;
+  top: 36px;
+  position: absolute;
+  height: calc(60vh - 36px);
+  width: 100%;
+}
+.viewConfigErrorJS {
+  background-color: lightcoral;
+  border-radius: 0;
+}
+.viewConfigEditorPreviewJSSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.viewConfigEditorInfo {
+  margin-left: 20px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  display: inline-block;
+}
+.viewConfigEditorFooter {
+  position: relative;
+  display: block;
+}
+
+.viewConfigEditorType {
+  position: absolute;
+  right: 0;
+  z-index: 5;
+  top: 12px;
+}
+
+.viewConfigEditorTypeSelect {
+  margin-right: 20px;
+  margin-bottom: 4px;
+}
+
+.viewConfigInputButton {
+  padding: 1.8rem 20px 0.4rem 2rem;
+}
+
+.viewConfigGo {
+  border: 2px solid var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary);
+  text-decoration: none !important;
+  text-transform: uppercase;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 5px 10px;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.viewConfigInputUrlOrFileSplit {
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+}
+
+.viewConfigInputs {
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+}
+
+.viewConfigInputUrlOrFileText {
+  margin-bottom: 0;
+  margin-left: 20px;
+}
+
+.viewConfigInputButton {
+
+}
+
+.viewConfigUrlInput {
+  padding: 0.5rem 1rem;
+  font-size: 16px;
+  margin: 0.5rem 0 0.5rem 20px;
+  border: 0;
+  box-shadow: -3px 3px 5px 5px rgba(0,0,0,.06);
+  outline: none;
+  color: var(--vit-input-foreground);
+  background-color: var(--vit-input-background);
+  box-sizing: border-box;
+}
+
+.viewConfigUrlInput::placeholder {
+  color: var(--dropzone);
+  opacity: 1;
+}
+
+
+.vitessceClear {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.vitessceClearButton {
+  display: inline-block;
+  right: 20px;
+  border: 2px solid var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  background-color: transparent;
+  line-height: 1.2em;
+  text-decoration: none !important;
+  text-transform: uppercase;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 5px 10px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+.vitessceAppLoadError {
+  background-color: lightcoral;
+  margin: 20px;
+}
+
+.viewConfigUrlDiv {
+  width: 50%;
+}
+
+.demoGridContainer {
+  display: grid;
+  padding: 2rem;
+  width: 100%;
+  grid-gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.demoGridItem {
+  background-color: var(--ifm-footer-background-color);
+  min-height: 150px;
+  border-radius: 4px;
+}
+
+.demoDescription {
+  padding: 2rem 2rem 0 2rem;
+  margin-bottom: 0;
+  
+}
+
+.demoGridItemLink {
+  display: inline-block;
+  margin: 0.5rem 1rem;
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.demoGridItemDescription {
+  margin: 0rem 1rem 1rem 1rem;
+}
+
+.livePreviewHeader {
+  background: var(--ifm-color-emphasis-500);
+  color: var(--ifm-color-content-inverse);
+  letter-spacing: .08rem;
+  padding: 0.25rem .75rem;
+  margin-bottom: 0 !important;
+  position: absolute;
+  height: 36px;
+  width: 100%;
+}
+
+
+.viewConfigEditorMain {
+  padding-bottom: 4rem;
+}
+
+.copyButtonContainer {
+  position: relative;
+}
+.copyButton {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: var(--ifm-global-radius);
+    color: var(--ifm-color-white);
+    cursor: pointer;
+    opacity: 1;
+    -webkit-user-select: none;
+    user-select: none;
+    padding: 0.4rem 0.5rem;
+    position: absolute;
+    right: calc(var(--ifm-pre-padding) / 2);
+    top: calc(var(--ifm-pre-padding) / 2);
+    transition: opacity 200ms ease-in-out;
+}
+
+:global(.monaco-editor .mtk8) {
+  color: #aac593;
+}
+
+:global(.monaco-editor .mtk20) {
+  color:#e3116c;
+}
+
+.demoHeaderContainer {
+  margin: 1rem;
+}
+
+.dataTypesTable code {
+  white-space: nowrap;
+}
+
+.dataTypesTable ul {
+  padding-left: 0.75rem;
+}
+
+.viewConfigTabs {
+  max-width: 100%;
+}
+
+.homeComponent {
+  display: none;
+}
+
+.homeScreenshots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.homeScreenshots > a {
+  flex: 0 1 600px;
+  margin: 5px;
+  color: var(--ifm-heading-color);
+  font-weight: 400;
+  text-decoration: none;
+}

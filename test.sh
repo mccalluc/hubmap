@@ -11,7 +11,7 @@ PATH=$PATH:`npm bin`
 
 start changelog
 if [ "$GITHUB_REF" != 'refs/heads/master' ]; then
-  diff CHANGELOG.md <(curl https://raw.githubusercontent.com/hubmapconsortium/vitessce/master/CHANGELOG.md) \
+  diff CHANGELOG.md <(curl https://raw.githubusercontent.com/vitessce/vitessce/master/CHANGELOG.md) \
     && die 'Update CHANGELOG.md'
 fi
 end changelog

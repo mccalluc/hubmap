@@ -1,0 +1,693 @@
+---
+id: tutorial-visium
+title: 'Tutorial: 10x Genomics Visium Dataset'
+sidebar_label: 10x Genomics Visium Dataset
+slug: /tutorial-visium
+---
+import ViewConfigTabs from '../src/pages/_ViewConfigTabs';
+
+In this tutorial, we will visualize a 10x Genomics visium dataset from start to finish with the Vitessce web app.
+
+We will perform data conversion using Python 3 and save our converted dataset to a Zarr-based AnnData file type.
+
+
+## Python environment setup
+
+Before proceeding with this tutorial, make sure you have installed [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/), which we will be using to manage the Python environment. We will also be using [http-server](https://github.com/http-party/http-server) which can be installed with Homebrew on macOS.
+
+First, create a new conda environment using the `conda create` command.
+
+```sh
+conda create -n vitessce-tutorial-env python=3.8
+```
+
+Activate the environment so that any packages become scoped under the new environment.
+
+```sh
+conda activate vitessce-tutorial-env
+```
+
+## Python package installation
+
+Use `conda install` to install the required Python packages.
+
+
+We will be using [Scanpy](https://scanpy.readthedocs.io/en/stable/index.html) to access the sample Visium dataset with the [visium_sge](https://scanpy.readthedocs.io/en/stable/api/scanpy.datasets.visium_sge.html) function. We will be using the [leiden](https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.leiden.html#scanpy.tl.leiden) function of Scanpy which depends on the `leidenalg` package.
+
+```sh
+conda install -c bioconda scanpy>=1.6.0
+conda install -c conda-forge leidenalg>=0.8.3
+```
+
+We will be using SciPy to perform [hierarchical clustering](https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html) along the gene axis of the cell-by-gene matrix to obtain an optimal gene ordering of genes for the heatmap visualization.
+
+```sh
+conda install -c conda-forge scipy>=1.0.0
+```
+
+## Dataset pre-processing
+
+In a Python console (terminal, Jupyter notebook, etc.) or Python script, perform the following steps to access and pre-process the raw data.
+
+First, import the Python dependencies.
+
+```py
+import scanpy as sc
+import scipy.cluster
+from os.path import join
+```
+
+Next, retrieve the AnnData object for the `V1_Human_Lymph_Node` dataset.
+```py
+adata = sc.datasets.visium_sge(sample_id="V1_Human_Lymph_Node", include_hires_tiff=True)
+```
+
+Run the following functions to pre-process the data in the `adata` object.
+These steps have been adapted from the Scanpy spatial analysis [tutorial](https://scanpy-tutorials.readthedocs.io/en/latest/spatial/basic-analysis.html).
+
+```py
+# Calculate QC metrics
+adata.var_names_make_unique()
+adata.var["mt"] = adata.var_names.str.startswith("MT-")
+sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
+
+# Perform basic filtering
+sc.pp.filter_cells(adata, min_counts=5000)
+sc.pp.filter_cells(adata, max_counts=35000)
+adata = adata[adata.obs["pct_counts_mt"] < 20]
+sc.pp.filter_genes(adata, min_cells=10)
+
+# Perform normalization
+sc.pp.normalize_total(adata, inplace=True)
+sc.pp.log1p(adata)
+# Determine the top 300 highly variable genes.
+sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=300)
+
+# Dimensionality reduction and clustering
+sc.pp.pca(adata)
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+sc.tl.leiden(adata, key_added="clusters")
+```
+
+As part of the previous steps, we ran the `highly_variable_genes` function, which updates the `highly_variable` column of the [`adata.var`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.var.html) data frame, marking 300 genes with `True` to denote that they are highly variable.
+
+Based on the 300 most highly variable genes, we want to:
+- compute the optimal ordering of the 300 highly variable genes (for heatmap visualization),
+- re-order the columns of the smaller cell-by-gene matrix based on the optimal ordering, and
+- append a smaller cell-by-gene matrix (N cells by 300 genes) to the `adata` object.
+
+```py
+# Get the highly variable gene matrix as a plain NumPy array
+X_hvg_arr = adata[:, adata.var['highly_variable']].X.toarray()
+X_hvg_index = adata[:, adata.var['highly_variable']].var.copy().index
+
+# Perform average linkage hierarchical clustering on along the genes axis of the array
+Z = scipy.cluster.hierarchy.linkage(X_hvg_arr.T, method="average", optimal_ordering=True)
+
+# Get the hierarchy-based ordering of genes.
+num_genes = adata.var.shape[0]
+highly_var_index_ordering = scipy.cluster.hierarchy.leaves_list(Z)
+highly_var_genes = X_hvg_index.values[highly_var_index_ordering].tolist()
+
+all_genes = adata.var.index.values.tolist()
+not_var_genes = adata.var.loc[~adata.var['highly_variable']].index.values.tolist()
+
+def get_orig_index(gene_id):
+    return all_genes.index(gene_id)
+var_index_ordering = list(map(get_orig_index, highly_var_genes)) + list(map(get_orig_index, not_var_genes))
+```
+
+At this point, we have obtained the optimal ordering of the genes index.
+We can run the following line to [subset](https://anndata.readthedocs.io/en/latest/anndata.AnnData.html) the AnnData object and replace our existing `adata` object with a new re-ordered object.
+
+```py
+adata = adata[:, var_index_ordering].copy()
+```
+
+
+We can append the smaller 300-gene cell-by-gene matrix under a new key `X_hvg` in [`adata.obsm`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.obsm.html) (with the optimal gene ordering).
+
+```py
+adata.obsm['X_hvg'] = adata[:, adata.var['highly_variable']].X.copy()
+```
+
+We need to ensure that the spatial coordinates have a JavaScript-compatible integer data type.
+
+```py
+adata.obsm['spatial'] = adata.obsm['spatial'].astype('uint16')
+```
+
+We need to transpose the image arrays so that they are compatible with our JavaScript-based image viewer.
+
+```py
+# Convert images from interleaved to non-interleaved (the color axis should be first).
+img_hires = adata.uns['spatial']['V1_Human_Lymph_Node']['images']['hires']
+img_lowres = adata.uns['spatial']['V1_Human_Lymph_Node']['images']['lowres']
+
+adata.uns['spatial']['V1_Human_Lymph_Node']['images']['hires'] = np.transpose(img_hires, (2, 0, 1))
+adata.uns['spatial']['V1_Human_Lymph_Node']['images']['lowres'] = np.transpose(img_lowres, (2, 0, 1))
+```
+
+Finally, we need to save the processed data as a Zarr store using the AnnData [write_zarr](https://anndata.readthedocs.io/en/latest/anndata.AnnData.write_zarr.html) function.
+
+```py
+adata.write_zarr("V1_Human_Lymph_Node.zarr")
+```
+
+## Serving processed data
+
+The Vitessce web application is written in JavaScript and runs in a web browser.
+Therefore, the application needs to access all data over HTTP.
+
+In this tutorial, we will use [http-server](https://github.com/http-party/http-server) to serve the processed Zarr store over HTTP on port 9000.
+
+```sh
+http-server ./ --cors -p 9000
+```
+
+To test that the server is working as expected, try to access [http://localhost:9000/V1_Human_Lymph_Node.zarr/.zgroup](http://localhost:9000/V1_Human_Lymph_Node.zarr/.zgroup) in a web browser.
+This downloads a new file called `.zgroup` to your Downloads folder.
+When `.zgroup` is opened in a text editor, it should contain the following contents:
+
+```
+{
+    "zarr_format": 2
+}
+```
+
+## View configuration
+
+Now that we have processed the data and started the local web server, we need to write a Vitessce configuration which specifies:
+- the data that we want to visualize,
+- the visualization types of interest, and
+- linking of visualization parameters across views ("view coordinations").
+
+:::note
+View configurations can be written using either a JSON syntax or a JavaScript syntax. Use the tabs above the view configuration examples below to toggle between these two options.
+:::
+
+
+We begin with a skeleton of a view config which lacks any visualizations or datasets.
+
+<ViewConfigTabs
+  json={`
+{
+  "version": "1.0.0",
+  "name": "10x visium human lymph node",
+  "initStrategy": "auto",
+  "datasets": [],
+  "coordinationSpace": {},
+  "layout": []
+}
+  `}
+  js={`
+const vc = new VitessceConfig("10x visium human lymph node");
+  `}
+/>
+
+### Dimensionality reduction scatterplots
+
+We want to visualize cell-level observations in scatterplots displaying the PCA and UMAP dimensionality reductions (which we computed with Scanpy earlier).
+
+Cell positions for scatterplots and spatial plots must be defined in a file that has the `cells` data type.
+The file definition for the cells data should look like:
+
+<ViewConfigTabs
+  json={`
+  ...,
+  {
+    "type": "cells",
+    "fileType": "anndata-cells.zarr",
+    "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+    "options": {
+      "mappings": {
+        "UMAP": {
+          "key": "obsm/X_umap",
+          "dims": [0, 1]
+        },
+        "PCA": {
+          "key": "obsm/X_pca",
+          "dims": [0, 1]
+        }
+      }
+    }
+  },
+  ...
+  `}
+  js={`
+...
+const dataset = vc
+  .addDataset("my-visium-dataset")
+  .addFile(
+    "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+    dt.CELLS,
+    ft.ANNDATA_CELLS_ZARR,
+    {
+      "mappings": {
+        "UMAP": {
+          "key": "obsm/X_umap",
+          "dims": [0, 1]
+        },
+        "PCA": {
+          "key": "obsm/X_pca",
+          "dims": [0, 1]
+        }
+      }
+    }
+  );
+...
+  `}
+/>
+
+
+
+The `options` part of the file definition above is specific to the `anndata-cells.zarr` file type, and the `mappings` object tells Vitessce how to map names of dimensionality reductions to arrays in the Zarr store. The strings `"UMAP"` and `"PCA"` in the above example are arbitrary names that we are choosing, and these strings will appear in the Vitessce user interface. The value for `"key"` must be a key to an array in the Zarr store, and the value for `"dims"` must be a tuple that specifies which dimensions of the dimensionality reduction array to use for the [X, Y] axes of the scatterplot.
+
+Before defining a scatterplot component, we need to set up the `embeddingType` coordination object in the coordination space.
+"Embedding type" is a coordination type because it allows us to coordinate which scatterplots should be displaying the same dimensionality reduction (e.g., PCA or UMAP).
+
+<ViewConfigTabs
+  json={`
+...,
+"coordinationSpace": {
+  "embeddingType": {
+    "ET1": "PCA",
+    "ET2": "UMAP"
+  }
+},
+...
+  `}
+  js={`
+...
+const [ET1, ET2] = vc.addCoordination("embeddingType", "embeddingType");
+ET1.setValue("PCA");
+ET2.setValue("UMAP");
+...
+  `}
+/>
+
+
+The `ET1` and `ET2` above are arbitrary names for the two coordination scopes.
+
+Next, we can define the visualization components:
+
+<ViewConfigTabs
+  json={`
+...,
+  {
+    "component": "scatterplot",
+    "coordinationScopes": {
+      "embeddingType": "ET1"
+    },
+    "x": 0, "y": 0, "w": 6, "h": 12
+  },
+  {
+    "component": "scatterplot",
+    "coordinationScopes": {
+      "embeddingType": "ET2"
+    },
+    "x": 6, "y": 0, "w": 6, "h": 12
+  }
+...
+  `}
+  js={`
+...
+const pcaPlot = vc
+  .addView(dataset, cm.SCATTERPLOT)
+  .useCoordination(ET1);
+const umapPlot = vc
+  .addView(dataset, cm.SCATTERPLOT)
+  .useCoordination(ET2);
+...
+  `}
+/>
+
+Putting this all together:
+
+<ViewConfigTabs
+  withJsonLink
+  json={`
+{
+  "version": "1.0.0",
+  "name": "10x visium human lymph node",
+  "initStrategy": "auto",
+  "datasets": [
+    {
+      "uid": "my-visium-dataset",
+      "files": [
+        {
+          "type": "cells",
+          "fileType": "anndata-cells.zarr",
+          "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+          "options": {
+            "mappings": {
+              "UMAP": {
+                "key": "obsm/X_umap",
+                "dims": [0, 1]
+              },
+              "PCA": {
+                "key": "obsm/X_pca",
+                "dims": [0, 1]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "coordinationSpace": {
+    "embeddingType": {
+      "ET1": "PCA",
+      "ET2": "UMAP"
+    }
+  },
+  "layout": [
+    {
+      "component": "scatterplot",
+      "coordinationScopes": {
+        "embeddingType": "ET1"
+      },
+      "x": 0, "y": 0, "w": 6, "h": 12
+    },
+    {
+      "component": "scatterplot",
+      "coordinationScopes": {
+        "embeddingType": "ET2"
+      },
+      "x": 6, "y": 0, "w": 6, "h": 12
+    }
+  ]
+}
+  `}
+  js={`
+const vc = new VitessceConfig("10x visium human lymph node");
+const dataset = vc
+  .addDataset("my-visium-dataset")
+  .addFile(
+    "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+    dt.CELLS,
+    ft.ANNDATA_CELLS_ZARR,
+    {
+      "mappings": {
+        "UMAP": {
+          "key": "obsm/X_umap",
+          "dims": [0, 1]
+        },
+        "PCA": {
+          "key": "obsm/X_pca",
+          "dims": [0, 1]
+        }
+      }
+    }
+  );
+const [ET1, ET2] = vc.addCoordination("embeddingType", "embeddingType");
+ET1.setValue("PCA");
+ET2.setValue("UMAP");
+const pcaPlot = vc
+  .addView(dataset, cm.SCATTERPLOT)
+  .useCoordination(ET1);
+const umapPlot = vc
+  .addView(dataset, cm.SCATTERPLOT)
+  .useCoordination(ET2);
+vc.layout(hconcat(pcaPlot, umapPlot));
+return vc.toJSON();
+  `}
+/>
+
+
+<!--
+### Images and heatmap
+
+The following is a full configuration with two spatial views (with coordinated zoom and pan interactions), a heatmap, and controller components for managing cell sets, spatial layers, and genes.
+
+```json
+{
+  "version": "1.0.0",
+  "name": "10x visium human lymph node",
+  "initStrategy": "auto",
+  "datasets": [
+    {
+      "uid": "visium",
+      "files": [
+        {
+          "type": "expression-matrix",
+          "fileType": "anndata-expression-matrix.zarr",
+          "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+          "options": {
+            "matrix": "obsm/X_hvg",
+            "geneFilter": "var/highly_variable"
+          }
+        },
+        {
+          "type": "cells",
+          "fileType": "anndata-cells.zarr",
+          "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+          "options": {
+            "xy": "obsm/spatial",
+            "mappings": {
+              "UMAP": {
+                "key": "obsm/X_umap",
+                "dims": [
+                  0,
+                  1
+                ]
+              },
+              "PCA": {
+                "key": "obsm/X_pca",
+                "dims": [
+                  0,
+                  1
+                ]
+              }
+            },
+            "factors": [
+              "obs/clusters"
+            ]
+          }
+        },
+        {
+          "type": "cell-sets",
+          "fileType": "anndata-cell-sets.zarr",
+          "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr",
+          "options": [
+            {
+              "groupName": "Leiden",
+              "setName": "obs/clusters"
+            }
+          ]
+        },
+        {
+          "type": "raster",
+          "fileType": "raster.json",
+          "options": {
+            "schemaVersion": "0.0.2",
+            "images": [
+              {
+                "name": "H&E Image",
+                "url": "http://localhost:9000/V1_Human_Lymph_Node.zarr/uns/spatial/V1_Human_Lymph_Node/images/hires",
+                "type": "zarr",
+                "metadata": {
+                  "isPyramid": false,
+                  "transform": {
+                    "scale": 5.87,
+                    "translate": {
+                      "x": 0,
+                      "y": 0
+                    }
+                  },
+                  "dimensions": [
+                    {
+                      "field": "channel",
+                      "type": "nominal",
+                      "values": [
+                        "R",
+                        "G",
+                        "B"
+                      ]
+                    },
+                    {
+                      "field": "y",
+                      "type": "quantitative",
+                      "values": null
+                    },
+                    {
+                      "field": "x",
+                      "type": "quantitative",
+                      "values": null
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "coordinationSpace": {
+    "spatialLayers": {
+      "A": [
+        {
+          "type": "cells",
+          "radius": 65,
+          "stroked": true,
+          "visible": true,
+          "opacity": 1
+        },
+        {
+          "type": "raster",
+          "index": 0,
+          "colormap": null,
+          "transparentColor": null,
+          "opacity": 1,
+          "domainType": "Min/Max",
+          "channels": [
+            {
+              "selection": {
+                "channel": 0
+              },
+              "color": [
+                255,
+                0,
+                0
+              ],
+              "visible": true,
+              "slider": [
+                0,
+                1
+              ]
+            },
+            {
+              "selection": {
+                "channel": 1
+              },
+              "color": [
+                0,
+                255,
+                0
+              ],
+              "visible": true,
+              "slider": [
+                0,
+                1
+              ]
+            },
+            {
+              "selection": {
+                "channel": 2
+              },
+              "color": [
+                0,
+                0,
+                255
+              ],
+              "visible": true,
+              "slider": [
+                0,
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "cellColorEncoding": {
+      "A": "cellSetSelection",
+      "B": "geneSelection"
+    },
+    "spatialZoom": {
+      "A": -4.455728265917529
+    },
+    "spatialTargetX": {
+      "A": 4975.310550270499
+    },
+    "spatialTargetY": {
+      "A": 5678.288421953778
+    },
+    "geneSelection": {
+      "A": [
+        "CR2"
+      ]
+    }
+  },
+  "layout": [
+    {
+      "component": "spatial",
+      "coordinationScopes": {
+        "spatialLayers": "A",
+        "spatialZoom": "A",
+        "spatialTargetX": "A",
+        "spatialTargetY": "A",
+        "cellColorEncoding": "A"
+      },
+      "x": 0,
+      "y": 0,
+      "w": 6,
+      "h": 6
+    },
+    {
+      "component": "spatial",
+      "coordinationScopes": {
+        "spatialLayers": "A",
+        "spatialZoom": "A",
+        "spatialTargetX": "A",
+        "spatialTargetY": "A",
+        "cellColorEncoding": "B",
+        "geneSelection": "A"
+      },
+      "x": 6,
+      "y": 0,
+      "w": 6,
+      "h": 6
+    },
+    {
+      "component": "heatmap",
+      "coordinationScopes": {
+        "cellColorEncoding": "A"
+      },
+      "x": 6,
+      "y": 6,
+      "w": 6,
+      "h": 6
+    },
+    {
+      "component": "layerController",
+      "coordinationScopes": {
+        "spatialLayers": "A"
+      },
+      "x": 0,
+      "y": 6,
+      "w": 2,
+      "h": 6
+    },
+    {
+      "component": "cellSets",
+      "coordinationScopes": {
+        "cellColorEncoding": "A"
+      },
+      "x": 2,
+      "y": 6,
+      "w": 2,
+      "h": 6
+    },
+    {
+      "component": "genes",
+      "coordinationScopes": {
+        "cellColorEncoding": "B",
+        "geneSelection": "A"
+      },
+      "x": 4,
+      "y": 6,
+      "w": 2,
+      "h": 6
+    }
+  ]
+}
+```
+
+
+
+
+
+-->

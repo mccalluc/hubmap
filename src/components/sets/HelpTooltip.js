@@ -8,7 +8,7 @@ import RcTooltip from 'rc-tooltip';
  * just returns `document.body` (see https://github.com/react-component/tooltip#props),
  * We want theme styles to be applied relative to the closest `.vitessce-container`
  * ancestor element.
- * https://github.com/hubmapconsortium/vitessce/pull/494#discussion_r395957914
+ * https://github.com/vitessce/vitessce/pull/494#discussion_r395957914
  * @param {object} props Props are passed through to the <RcTooltip/> from the library.
  */
 export default function HelpTooltip(props) {

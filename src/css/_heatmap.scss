@@ -1,5 +1,5 @@
 /*
-See https://github.com/hubmapconsortium/vitessce/issues/368 for why this css needs to exist and https://github.com/hubmapconsortium/vitessce/pull/607 for a longer explanation.
+See https://github.com/vitessce/vitessce/issues/368 for why this css needs to exist and https://github.com/vitessce/vitessce/pull/607 for a longer explanation.
 The absolute positioning gives us the control we need to force the canvas elements to "fill" the container - this was not happening in Safari with the bootstrap css.
 */
 @mixin heatmap($theme-name, $theme-colors) {

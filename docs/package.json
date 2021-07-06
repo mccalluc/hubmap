@@ -1,0 +1,47 @@
+{
+  "name": "docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start --port 3001",
+    "build-root": "export USE_SIMPLE_CSS_MINIFIER=true && docusaurus build --out-dir dist-root",
+    "build-versioned": "export USE_SIMPLE_CSS_MINIFIER=true && docusaurus build --out-dir dist-versioned",
+    "swizzle": "docusaurus swizzle --danger",
+    "serve": "docusaurus serve --port 3001",
+    "clear": "docusaurus clear"
+  },
+  "dependencies": {
+    "@docusaurus/core": "2.0.0-alpha.69",
+    "@docusaurus/preset-classic": "2.0.0-alpha.69",
+    "@docusaurus/theme-live-codeblock": "2.0.0-alpha.69",
+    "@mdx-js/react": "^1.6.21",
+    "babel-preset-react-app": "^9.1.2",
+    "clsx": "^1.1.1",
+    "copy-text-to-clipboard": "^2.2.0",
+    "docusaurus-plugin-sass": "^0.1.11",
+    "lodash": "^4.17.20",
+    "monaco-editor-webpack-plugin": "^3.0.1",
+    "prism-react-renderer": "^1.1.1",
+    "query-string": "^6.13.7",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-dropzone": "^11.2.4",
+    "react-live": "^2.2.3",
+    "react-loadable": "^5.5.0",
+    "react-monaco-editor": "^0.42.0",
+    "use-query-params": "^1.1.9"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

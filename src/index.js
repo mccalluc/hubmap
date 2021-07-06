@@ -13,6 +13,12 @@ import {
   hconcat,
   vconcat,
 } from './api';
+import {
+  Component,
+  DataType,
+  FileType,
+  CoordinationType,
+} from './app/constants';
 
 export {
   Heatmap,
@@ -26,4 +32,8 @@ export {
   VitessceConfig,
   hconcat,
   vconcat,
+  Component,
+  DataType,
+  FileType,
+  CoordinationType,
 };

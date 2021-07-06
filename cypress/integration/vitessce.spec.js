@@ -1,4 +1,4 @@
-import { urlPrefix } from '../../src/app/api';
+import { urlPrefix } from '../../src/demo/utils';
 
 Cypress.on('window:before:load', (win) => {
   // Forces fallback to XHR, so cypress can mock response.
@@ -32,23 +32,18 @@ describe('Vitessce Mocked Routes', () => {
     cy.contains('Vitessce');
     cy.contains('Its modular design is optimized');
     cy.contains('just scatterplot as component'); // Not public; requires "show=all".
-    cy.contains('Linnarsson as component')
+    cy.contains('Spraggins as component')
       .click();
     // This part seems to be fragile: Might run too fast?
     // cy.contains('Please wait');
     // cy.get('.modal-body').should('be.visible');
   });
 
-  it('loads details (static)', () => {
-    cy.visit('/?dataset=linnarsson-2018-static&debug=true');
-    cy.contains('Linnarsson (static layout): Spatial organization');
-  });
-
-  it('loads details (responsive)', () => {
-    cy.visit('/?dataset=linnarsson-2018&debug=true');
+  it('loads details', () => {
+    cy.visit('/?dataset=codeluppi-2018&debug=true');
 
     // Data Set:
-    cy.contains('Linnarsson: Spatial organization');
+    cy.contains('Spatial organization');
 
     // Status:
     // Contents will depend on load order, so not sure how to make a good test

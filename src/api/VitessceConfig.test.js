@@ -1,5 +1,5 @@
 import expect from 'expect';
-import { COORDINATION_TYPES } from '../app/state/coordination';
+import { CoordinationType } from '../app/constants';
 import {
   VitessceConfig,
   hconcat,
@@ -132,9 +132,9 @@ describe('src/api/VitessceConfig.js', () => {
       const tsne = config.addView(dataset, 'scatterplot', { mapping: 't-SNE' });
 
       const [ezScope, etxScope, etyScope] = config.addCoordination(
-        COORDINATION_TYPES.EMBEDDING_ZOOM,
-        COORDINATION_TYPES.EMBEDDING_TARGET_X,
-        COORDINATION_TYPES.EMBEDDING_TARGET_Y,
+        CoordinationType.EMBEDDING_ZOOM,
+        CoordinationType.EMBEDDING_TARGET_X,
+        CoordinationType.EMBEDDING_TARGET_Y,
       );
       pca.useCoordination(ezScope, etxScope, etyScope);
       tsne.useCoordination(ezScope, etxScope, etyScope);
@@ -214,15 +214,15 @@ describe('src/api/VitessceConfig.js', () => {
       config.linkViews(
         [pca, tsne],
         [
-          COORDINATION_TYPES.EMBEDDING_ZOOM,
+          CoordinationType.EMBEDDING_ZOOM,
         ],
       );
 
       config.linkViews(
         [pca, tsne],
         [
-          COORDINATION_TYPES.EMBEDDING_TARGET_X,
-          COORDINATION_TYPES.EMBEDDING_TARGET_Y,
+          CoordinationType.EMBEDDING_TARGET_X,
+          CoordinationType.EMBEDDING_TARGET_Y,
         ],
         [
           2,

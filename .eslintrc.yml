@@ -20,7 +20,7 @@ rules:
   react/jsx-filename-extension: [0]  # Imports don't work if I change extension.
   react/sort-comp: [0]  # Non-alphabetical groupings can make more sense.
   react/jsx-one-expression-per-line: [0]  # Makes punctuation after tab awkward.
-  react/prop-types: [0] # Re-enable: https://github.com/hubmapconsortium/vitessce/issues/144
+  react/prop-types: [0] # Re-enable: https://github.com/vitessce/vitessce/issues/144
   import/prefer-default-export: [0]  # Hit eslint error: SyntaxError: Unexpected token, expected {
   vitessce-rules/prevent-pubsub-import: [2]
 overrides:

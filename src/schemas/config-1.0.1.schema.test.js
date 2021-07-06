@@ -1,11 +1,11 @@
 import expect from 'expect';
-import { COORDINATION_TYPES } from '../app/state/coordination';
+import { CoordinationType } from '../app/constants';
 import viewConfigSchema from './config-1.0.1.schema.json';
 
 describe('view config schema', () => {
   describe('coordination types', () => {
     it('defines schema for all valid coordination types', () => {
-      const allCoordinationTypes = Object.values(COORDINATION_TYPES);
+      const allCoordinationTypes = Object.values(CoordinationType);
       const inCoordinationSpace = Object.keys(
         viewConfigSchema.properties.coordinationSpace.properties,
       );
@@ -19,7 +19,7 @@ describe('view config schema', () => {
     });
 
     it('defines schema for only valid coordination types (does not have extra)', () => {
-      const allCoordinationTypes = Object.values(COORDINATION_TYPES);
+      const allCoordinationTypes = Object.values(CoordinationType);
       const inCoordinationSpace = Object.keys(
         viewConfigSchema.properties.coordinationSpace.properties,
       );

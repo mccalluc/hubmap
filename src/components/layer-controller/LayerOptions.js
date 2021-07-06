@@ -302,7 +302,7 @@ function GlobalSelectionSlider({
   return (
     <StyledSelectionSlider
       value={value}
-      // See https://github.com/hubmapconsortium/vitessce-image-viewer/issues/176 for why
+      // See https://github.com/hms-dbmi/viv/issues/176 for why
       // we have the two handlers.
       onChange={
         (event, newValue) => {

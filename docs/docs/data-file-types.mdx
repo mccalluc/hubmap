@@ -1,0 +1,774 @@
+---
+id: data-file-types
+title: Supported File Types
+sidebar_label: Supported File Types
+slug: /data-file-types
+---
+import ViewConfigTabs from '../src/pages/_ViewConfigTabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+This page contains details about the file types that are supported by Vitessce, both those which can be loaded natively (by specifying file URLs in the view config) and those other file types for which conversion to native file types is straightforward.
+Use the tabs on the page to toggle between code snippets for [JSON-](/docs/view-config-json/index.html) and [JavaScript API-](/docs/view-config-js/index.html)based view configs.
+
+## Native File Types
+
+Native file types are those which Vitessce can read directly from a static web server via a [loader class](https://github.com/vitessce/vitessce/tree/master/src/loaders).
+We welcome pull requests which implement loader classes to support additional file types natively.
+
+
+### AnnData as Zarr
+
+Once your AnnData object has been written to a Zarr store, columns and keys in the original object (such as `adata.obs["leiden"]` or `adata.obsm["X_umap"]`) become relative file paths such as `obs/leiden` and `obsm/X_umap`.
+In the `options` property for file definitions in the Vitessce view config, you must specify which columns and keys will be used for visualization using POSIX-style paths.
+
+:::note
+The same Zarr store URL can be used for defining multiple files in the view config, for different data types and file types.
+:::
+
+:::caution
+The Zarr file types are not yet compatible with the Vitessce R package because [Zarr is not yet supported in R](https://github.com/vitessce/vitessce-r/issues/7).
+:::
+
+
+#### `anndata-cells.zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs forData
+json={`
+  {
+    "url": "http://example.com/my_store.zarr",
+    "type": "cells",
+    "fileType": "anndata-cells.zarr",
+    "options": {
+      // XY values represent spatial centroids, so values point to an array of tuples, one per observation/cell.
+      "xy": "obsm/centroids",
+      // Polygon values represent spatial segmentations, so values point to an array of arrays, one per observation/cell.
+      "poly": "obsm/polygons",
+      // Mappings define coordinates for scatterplot points - 
+      // the original arrays may contain more than two dimensions per observation/cell,
+      // so the dims property must slice these down to tuples.
+      // This allows comparing the fourth and fifth principal components, for example.
+      // The key immediately under mappings must be used in the coordination scopes.
+      "mappings": {
+        "UMAP": {
+          "key": "obsm/umap",
+          "dims": [ 0, 1 ]
+        },
+        "PCA": {
+          "key": "obsm/pca",
+          "dims": [ 4, 5 ]
+        }
+      },
+      // Factors define per-observation annotations, like clustering results, to display in the popover.
+      "factors": [
+        "obs/leiden"
+      ]
+    }
+  }
+`}
+js={`
+const options = {
+  // XY values represent spatial centroids, so values point to an array of tuples, one per observation/cell.
+  "xy": "obsm/centroids",
+  // Polygon values represent spatial segmentations, so values point to an array of arrays, one per observation/cell.
+  "poly": "obsm/polygons",
+  // Mappings define coordinates for scatterplot points - 
+  // the original arrays may contain more than two dimensions per observation/cell,
+  // so the dims property must slice these down to tuples.
+  // This allows comparing the fourth and fifth principal components, for example.
+  // The key immediately under mappings must be used in the coordination scopes.
+  "mappings": {
+    "UMAP": {
+      "key": "obsm/umap",
+      "dims": [ 0, 1 ]
+    },
+    "PCA": {
+      "key": "obsm/pca",
+      "dims": [ 4, 5 ]
+    }
+  },
+  // Factors define per-observation annotations, like clustering results, to display in the popover.
+  "factors": [
+    "obs/leiden"
+  ]
+};
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_store.zarr",
+    dt.CELLS,
+    ft.ANNDATA_CELLS_ZARR,
+    options
+  );
+`}
+  />
+
+
+#### `anndata-cell-sets.zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_store.zarr",
+    "type": "cell-sets",
+    "fileType": "anndata-cell-sets.zarr",
+    // Options defines which columns contain cell sets (clustering results) in the cell sets component.
+    // The groupName is the display name and the setName is the path within the Zarr store.
+    "options": [
+      {
+        "groupName": "Ledien",
+        "setName": "obs/leiden"
+      },
+      {
+        "groupName": "Cell Type",
+        "setName": "obs/cell_type"
+      },
+    ]
+  }
+`}
+js={`
+// Options defines which columns contain cell sets (clustering results) in the cell sets component.
+// The groupName is the display name and the setName is the path within the Zarr store.
+const options = [
+  {
+    "groupName": "Ledien",
+    "setName": "obs/leiden"
+  },
+  {
+    "groupName": "Cell Type",
+    "setName": "obs/cell_type"
+  },
+];
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_store.zarr",
+    dt.CELL_SETS,
+    ft.ANNDATA_CELL_SETS_ZARR,
+    options
+  );
+`}
+  />
+
+
+#### `anndata-expression-matrix.zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_store.zarr",
+    "type": "expression-matrix",
+    "fileType": "anndata-expression-matrix.zarr",
+    "options": {
+      "matrix": "X"
+    }
+  }
+`}
+js={`
+const options = {
+  "matrix": "X"
+};
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_store.zarr",
+    dt.EXPRESSION_MATRIX,
+    ft.ANNDATA_EXPRESSION_MATRIX_ZARR,
+    options
+  );
+`}
+  />
+  
+  While the expression matrix file loader does not fetch the entire matrix and store it in memory, displaying a heatmap will fetch whatever
+  genes are needed for the heatmap.  Similarly, selecting a gene to display over a scatterplot or spatial component can be costly
+  if the expression matrix is not stored properly.
+  In both cases, a poor chunking strategy can lead to too much data being requested for every gene selection/gene needed for the heatmap.
+  If you experience performance issues, you may [use or store a subset of the matrix](#use-or-store-a-subset-of-x) to the Zarr store.
+
+  The following snippet uses a Zarr store in which `var/highly_variable` provides a boolean filter of `X` for displaying a heatmap of
+  highly variable genes:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_store.zarr",
+    "type": "expression-matrix",
+    "fileType": "anndata-expression-matrix.zarr",
+    "options": {
+      // Matrix provides the location of an
+      // obs-by-var (cell-by-gene) matrix to load into memory.
+      "matrix": "obsm/X",
+      // Matrix genes filter is a boolean list which defines
+      // the subset of genes contained in the matrix to be visualized in the heatmap.
+      // All of the genes in \`var\` will display in the \`Genes\` component though.
+      // Use \`geneFilter\` instead if you only want to show a subset of the genes there
+      // (this must be defined if the matrix is a subset of AnnData.X).
+      "matrixGeneFilter": "var/highly_variable"
+    }
+  }
+`}
+js={`
+const options = {
+  // Matrix provides the location of an
+  // obs-by-var (cell-by-gene) matrix to load into memory.
+  "matrix": "obsm/X",
+  // Matrix genes filter is a boolean list which defines
+  // the subset of genes contained in the matrix to be visualized in the heatmap.
+  // All of the genes in \`var\` will display in the \`Genes\` component though.
+  // Use \`geneFilter\` instead if you only want to show a subset of the genes there
+  // (this must be defined if the matrix is a subset of AnnData.X).
+  "matrixGeneFilter": "var/highly_variable"
+};
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_store.zarr",
+    dt.EXPRESSION_MATRIX,
+    ft.ANNDATA_EXPRESSION_MATRIX_ZARR,
+    options
+  );
+`}
+  />
+
+### `cells.json`
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/cells.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/cells.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/dries/dries.cells.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_cells.json",
+    "type": "cells",
+    "fileType": "cells.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_cells.json",
+    dt.CELLS,
+    ft.CELLS_JSON
+  );
+`}
+  />
+
+
+### `cell-sets.json`
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/cell-sets.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/cell-sets.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/dries/dries.cell-sets.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_cell_sets.json",
+    "type": "cell-sets",
+    "fileType": "cell-sets.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_cell_sets.json",
+    dt.CELL_SETS,
+    ft.CELL_SETS_JSON
+  );
+`}
+  />
+
+
+### `molecules.json`
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/molecules.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/molecules.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/linnarsson/linnarsson.molecules.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_molecules.json",
+    "type": "molecules",
+    "fileType": "molecules.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_molecules.json",
+    dt.MOLECULES,
+    ft.MOLECULES_JSON
+  );
+`}
+  />
+
+### `genes.json`
+
+:::tip
+The `genes.json` format is not very efficient from a file size perspective.
+For large expression matrices, we recommend using the more compact Zarr `expression-matrix.zarr` or `anndata-expression-matrix.zarr` formats.
+:::
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/genes.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/genes.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/linnarsson/linnarsson.genes.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_matrix_a.json",
+    "type": "expression-matrix",
+    "fileType": "genes.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_matrix_a.json",
+    dt.EXPRESSION_MATRIX,
+    ft.GENES_JSON
+  );
+`}
+  />
+
+### `clusters.json`
+
+:::note
+The name `clusters.json` is misleading; this file type is not intended to store clustering results (see `cell-sets.json` for storing clustering results).
+`clusters.json` is meant to store cell-by-gene expression matrices.
+:::
+
+:::tip
+The `clusters.json` format is not very efficient from a file size perspective.
+For large expression matrices, we recommend using the more compact Zarr `expression-matrix.zarr` or `anndata-expression-matrix.zarr` formats.
+:::
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/clusters.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/clusters.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/linnarsson/linnarsson.clusters.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_matrix_b.json",
+    "type": "expression-matrix",
+    "fileType": "clusters.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_matrix_b.json",
+    dt.EXPRESSION_MATRIX,
+    ft.CLUSTERS_JSON
+  );
+`}
+  />
+
+
+### `expression-matrix.zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_matrix.zarr",
+    "type": "expression-matrix",
+    "fileType": "expression-matrix.zarr"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_matrix.zarr",
+    dt.EXPRESSION_MATRIX,
+    ft.EXPRESSION_MATRIX_ZARR
+  );
+`}
+  />
+
+### `raster.json`
+
+- [JSON schema for options](https://github.com/vitessce/vitessce/blob/master/src/schemas/raster.schema.json)
+
+  :::note
+
+  When defining image data with the `raster.json` file type, the main `url` property is not used.
+  Instead, image URLs may be specified in the `images` array in the `options` property.
+
+  :::note
+
+
+- View config file definition snippet with an OME-TIFF image and segmentation bitmask:
+
+  <ViewConfigTabs
+json={`
+  {
+    "type": "raster",
+    "fileType": "raster.json",
+    "options": {
+      "renderLayers": ["My OME-TIFF Image", "My OME-TIFF Mask"],
+      "schemaVersion": "0.0.2",
+      "images": [
+        {
+          "name": "My OME-TIFF Image",
+          "url": "http://example.com/my_image.ome.tif",
+          "type": "ome-tiff",
+          "metadata": {
+            "transform": {
+              // An optional transformation matrix
+              // in column-major order.
+              "matrix": [
+                0.81915098, -0.57357901, 0, 3264.76514684,
+                0.57357502, 0.819152, 0, 556.50440621,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+              ]
+            }
+          }
+        },
+        {
+          "name": "My OME-TIFF Mask",
+          "url": "http://example.com/my_mask.ome.tif",
+          "type": "ome-tiff",
+          "metadata": {
+            "isBitmask": true
+          }
+        }
+      ]
+    }
+  }
+`}
+js={`
+const options = {
+   "renderLayers": ["My OME-TIFF Image", "My OME-TIFF Mask"],
+  "schemaVersion": "0.0.2",
+  "images": [
+    {
+      "name": "My OME-TIFF Image",
+      "url": "http://example.com/my_image.ome.tif",
+      "type": "ome-tiff",
+      "metadata": {
+        "transform": {
+          // An optional transformation matrix
+          // in column-major order.
+          "matrix": [
+            0.81915098, -0.57357901, 0, 3264.76514684,
+            0.57357502, 0.819152, 0, 556.50440621,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+          ]
+        }
+      }
+    },
+    {
+      "name": "My OME-TIFF Mask",
+      "url": "http://example.com/my_mask.ome.tif",
+      "type": "ome-tiff",
+      "metadata": {
+        "isBitmask": true
+      }
+    }
+  ]
+};
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    undefined,
+    dt.RASTER,
+    ft.RASTER_JSON,
+    options
+  );
+`}
+  />
+
+- View config file definition snippet with a Zarr store:
+
+  <ViewConfigTabs
+json={`
+  {
+    "type": "raster",
+    "fileType": "raster.json",
+    "options": {
+      "schemaVersion": "0.0.2",
+      "images": [
+        {
+          "name": "My Bioformats-Zarr Image",
+          "url": "http://example.com/my_image.zarr",
+          "type": "zarr",
+          "metadata": {
+            "dimensions": [
+              {
+                "field": "channel",
+                "type": "nominal",
+                "values": [
+                  "DAPI - Hoechst (nuclei)",
+                  "FITC - Laminin (basement membrane)",
+                  "Cy3 - Synaptopodin (glomerular)",
+                  "Cy5 - THP (thick limb)"
+                ]
+              },
+              {
+                "field": "y",
+                "type": "quantitative",
+                "values": null
+              },
+              {
+                "field": "x",
+                "type": "quantitative",
+                "values": null
+              }
+            ],
+            "isPyramid": true,
+            "transform": {
+              "translate": {
+                "y": 0,
+                "x": 0
+              },
+              "scale": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+`}
+js={`
+const options = {
+  "schemaVersion": "0.0.2",
+  "images": [
+    {
+      "name": "My Bioformats-Zarr Image",
+      "url": "http://example.com/my_image.zarr",
+      "type": "zarr",
+      "metadata": {
+        "dimensions": [
+          {
+            "field": "channel",
+            "type": "nominal",
+            "values": [
+              "DAPI - Hoechst (nuclei)",
+              "FITC - Laminin (basement membrane)",
+              "Cy3 - Synaptopodin (glomerular)",
+              "Cy5 - THP (thick limb)"
+            ]
+          },
+          {
+            "field": "y",
+            "type": "quantitative",
+            "values": null
+          },
+          {
+            "field": "x",
+            "type": "quantitative",
+            "values": null
+          }
+        ],
+        "isPyramid": true,
+        "transform": {
+          "translate": {
+            "y": 0,
+            "x": 0
+          },
+          "scale": 1
+        }
+      }
+    }
+  ]
+};
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    undefined,
+    dt.RASTER,
+    ft.RASTER_JSON,
+    options
+  );
+`}
+  />
+
+
+### `raster.ome-zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_image.ome.zarr",
+    "type": "raster",
+    "fileType": "raster.ome-zarr"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "url": "http://example.com/my_image.ome.zarr",
+    dt.RASTER,
+    ft.RASTER_OME_ZARR
+  );
+`}
+  />
+
+
+### `neighborhoods.json`
+
+- [JSON schema](https://github.com/vitessce/vitessce/blob/master/src/schemas/neighborhoods.schema.json)
+- [JSON schema fixture](https://github.com/vitessce/vitessce/blob/master/src/schemas/fixtures/neighborhoods.good.json)
+- [Example file](https://s3.amazonaws.com/vitessce-data/0.0.31/master_release/linnarsson/linnarsson.neighborhoods.json)
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_neighborhoods.json",
+    "type": "neighborhoods",
+    "fileType": "neighborhoods.json"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "http://example.com/my_neighborhoods.json",
+    dt.NEIGHBORHOODS,
+    ft.NEIGHBORHOODS_JSON
+  );
+`}
+  />
+
+### `genomic-profiles.zarr`
+
+- View config file definition snippet:
+
+  <ViewConfigTabs
+json={`
+  {
+    "url": "http://example.com/my_genomic_profiles.zarr",
+    "type": "genomic-profiles",
+    "fileType": "genomic-profiles.zarr"
+  }
+`}
+js={`
+const dataset = vc
+  .addDataset("My dataset")
+  .addFile(
+    "url": "http://example.com/my_genomic_profiles.zarr",
+    dt.GENOMIC_PROFILES,
+    ft.GENOMIC_PROFILES_ZARR
+  );
+`}
+  />
+
+
+## Other File Types
+
+Other file types must be converted to native file types prior to being used with Vitessce.
+Here we provide tips for conversion from common single-cell file types.
+
+### AnnData as h5ad
+
+#### Convert to Zarr
+
+Use AnnData's [`read_h5ad`](https://anndata.readthedocs.io/en/latest/anndata.read_loom.html) function to load the file as an AnnData object, then use the [`.write_zarr`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.write_zarr.html) function to convert to a Zarr store. 
+
+```python
+from anndata import read_h5ad
+import zarr
+
+adata = read_h5ad('path/to/my_dataset.h5ad')
+adata.write_zarr('my_store.zarr')
+```
+
+Converted outputs can be used with the [AnnData as Zarr](#anndata-as-zarr) family of native file types.
+
+#### Use or Store a subset of X
+
+When the full expression matrix `adata.X` is large, there may be performance costs if Vitessce tries to load the full matrix for visualization, whether it be a heatmap
+or just loading genes to overlay on a spatial or scatterplot component.
+To offset this there are two things you can do:
+1. Use CSC format or chunk the zarr store efficiently (the later is recommended at the moment, see below) so that the UI remains responsive when selecting a gene to load into the client.
+Every time a gene is selected (or the heatmap is loaded), the client will use Zarr to fetch all the "cell x gene" information needed for rendering - however, a poor chunking strategy
+can result in too much data be loaded (and then not used).  To remedy this, we recommend passing in the `chunk_size` argument to `write_zarr` so that the data is chunked in a manner that allows
+remote sources (like browsers) to fetch only the genes (and all cells) necessary for efficient display - to this end the chunk size is usually something like `[num_cells, small_number]`
+so every chunk contains all the cells, but only a few genes.  That way, when you select a gene, only a small chunk of data is fetched for rendering and little is wasted.  Ideally, at most
+one small request is made for every selection.  You are welcome to try different chunking strategies as you see fit though!
+2. If only interested in a subset of the expression matrix for a heatmap, a filter (`matrixGeneFilter` in the view config) for the matrix can be stored as a boolean array in `var`.
+In this case, it is the `highly_variable` key from the `sc.pp.highly_variable_genes` call below.  This will not alter the genes displayed in the `Genes` component (use `geneFilter` for that in the view config).
+
+```python
+import scanpy as sc
+from anndata import read_h5ad
+import zarr
+
+adata = read_h5ad('path/to/my_dataset.h5ad')
+
+# Adds the `highly_variable` key to `var`
+sc.pp.highly_variable_genes(adata, n_top_genes=200)
+# If the matrix is sparse, it's best for performance to
+# use non-sparse formats + chunking to keep the UI responsive.
+# In the future, we should be able to use CSC sparse data natively
+# and get equal performance with chunking:
+# https://github.com/theislab/anndata/issues/524 
+# but for now, it is still not as good (although not unusable).
+if isinstance(adata.X, sparse.spmatrix):
+    adata.X = adata.X.todense() # Or adata.X.tocsc() if you need to.
+adata.write_zarr(zarr_path, [adata.shape[0], VAR_CHUNK_SIZE])  # VAR_CHUNK_SIZE should be something small like 10
+```
+
+Alternatively, a smaller matrix can be stored as multi-dimensional observation array in `adata.obsm` and used in conjunction with the `geneFilter` part of the view config.
+
+```python
+sc.pp.highly_variable_genes(adata, n_top_genes=200)
+adata.obsm['X_top_200_genes'] = adata[:, adata.var['highly_variable']].X.copy()
+adata.write_zarr('my_store.zarr')
+```
+
+Converted outputs can be used with the [AnnData as Zarr](#anndata-as-zarr) family of native file types. Both dense and sparse expression matrices are supported.
+
+### Loom
+
+#### Convert to Zarr via AnnData
+
+Use AnnData's [`read_loom`](https://anndata.readthedocs.io/en/latest/anndata.read_loom.html) function to load the Loom file as an AnnData object, then use the [`.write_zarr`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.write_zarr.html) function to convert to a Zarr store. 
+
+```python
+from anndata import read_loom
+
+adata = read_loom(
+  'path/to/my_dataset.loom',
+  obsm_names={ "tSNE": ["_tSNE_1", "_tSNE_2"], "spatial": ["X", "Y"] }
+)
+adata.write_zarr('my_store.zarr')
+```
+
+Converted outputs can be used with the [AnnData as Zarr](#anndata-as-zarr) family of native file types.
+
+### Seurat
+
+The Vitessce R package can be used to [convert Seurat objects](https://vitessce.github.io/vitessce-r/reference/SeuratWrapper.html) to the [`cells.json`](#cellsjson) and [`cell-sets.json`](#cell-setsjson) file types.
+
+### SnapATAC
+
+The Vitessce Python package can be used to [convert SnapATAC outputs](https://vitessce.github.io/vitessce-python/data_examples.html) to the [`genomic-profiles.zarr`](#genomic-profileszarr), [`cells.json`](#cellsjson), and [`cell-sets.json`](#cell-setsjson) file types.
