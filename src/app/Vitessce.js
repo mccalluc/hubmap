@@ -8,7 +8,8 @@ import {
 import isEqual from 'lodash/isEqual';
 import packageJson from '../../package.json';
 import { muiTheme } from '../components/shared-mui/styles';
-import configSchema from '../schemas/config-1.0.1.schema.json';
+import configSchema from '../schemas/config-1.0.2.schema.json';
+import configSchema1_0_1 from '../schemas/config-1.0.1.schema.json';
 import configSchema1_0_0 from '../schemas/config-1.0.0.schema.json';
 import configSchema0_1_0 from '../schemas/config-0.1.0.schema.json';
 import cellSetsSchema from '../schemas/cell-sets.schema.json';
@@ -105,6 +106,22 @@ export default function Vitessce(props) {
       }
       // Upgrade from v1.0.0 to v1.0.1 before v1.0.1 schema validation.
       upgradedConfig = upgrade('1.0.0', upgradedConfig);
+    }
+    if (upgradedConfig.version === '1.0.1') {
+      console.log(upgradedConfig) // eslint-disable-line
+      // Validate under the legacy schema first.
+      const validateLegacy = new Ajv()
+        .addSchema(cellSetsSchema).addSchema(rasterSchema).compile(configSchema1_0_1);
+      const validLegacy = validateLegacy(upgradedConfig);
+      if (!validLegacy) {
+        const failureReason = JSON.stringify(validateLegacy.errors, null, 2);
+        return [{
+          title: 'Config validation failed',
+          preformatted: failureReason,
+        }, false];
+      }
+      // Upgrade from v1.0.0 to v1.0.1 before v1.0.1 schema validation.
+      upgradedConfig = upgrade('1.0.1', upgradedConfig);
     }
     // NOTE: Remove when a view config viewer/editor is available in UI.
     console.groupCollapsed(`🚄 Vitessce (${packageJson.version}) view configuration`);

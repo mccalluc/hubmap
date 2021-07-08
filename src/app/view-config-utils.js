@@ -1,6 +1,7 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable camelcase */
 import uuidv4 from 'uuid/v4';
+import cloneDeep from 'lodash/cloneDeep';
 import { getNextScope, capitalize } from '../utils';
 import {
   COORDINATION_TYPES,
@@ -365,12 +366,56 @@ export function upgradeFrom1_0_0(config) {
   };
 }
 
+export function upgradeFrom1_0_1(config) {
+  const newConfig = { ...config };
+  const oldDatasets = cloneDeep(config.datasets);
+  // Filter out old AnnData files.
+  newConfig.datasets.forEach((dataset, index) => {
+    newConfig.datasets[index].files = dataset.files.filter(file => !file.fileType.includes('anndata'));
+  });
+  // Put new AnnData file object replacements in.
+  oldDatasets.forEach((dataset, index) => {
+    const newAnnDataFile = {
+      fileType: 'anndata.zarr',
+      options: {},
+      type: [],
+      url: '',
+    };
+    const hasAnnDataFile = dataset.files.some(file => file.fileType.includes('anndata'));
+    dataset.files.forEach((file) => {
+      if (file.fileType.includes('anndata')) {
+        newAnnDataFile.type.push(file.type);
+        // Create the new options made up of the old options.
+        if (file.type !== 'cell-sets') {
+          newAnnDataFile.options = {
+            ...newAnnDataFile.options,
+            ...file.options,
+          };
+        } else {
+          newAnnDataFile.options.cellSets = file.options;
+        }
+        newAnnDataFile.url = file.url;
+      }
+    });
+    if (hasAnnDataFile) {
+      newConfig.datasets[index].files.push(newAnnDataFile);
+    }
+  });
+  return {
+    ...newConfig,
+    version: '1.0.2',
+  };
+}
+
 export function upgrade(fromVersion, oldConfig) {
   if (fromVersion === '0.1.0') {
     return upgradeFrom0_1_0(oldConfig);
   }
   if (fromVersion === '1.0.0') {
     return upgradeFrom1_0_0(oldConfig);
+  }
+  if (fromVersion === '1.0.1') {
+    return upgradeFrom1_0_1(oldConfig);
   }
   throw new Error(`Unable to upgrade from unknown version ${fromVersion}`);
 }

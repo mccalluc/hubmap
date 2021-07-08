@@ -16,8 +16,8 @@ export default class AbstractLoader {
     this.subscriptions = {};
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  load() {
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  load(type = '') {
     throw new Error('The load() method has not been implemented.');
   }
 

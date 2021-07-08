@@ -1,0 +1,985 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/hubmapconsortium/vitessce/#dataset",
+  "title": "Vitessce data set",
+  "type": "object",
+  "definitions": {
+    "components": {
+      "description": "The layout array defines the views, or components, rendered in the grid.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "x", "y"],
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "Specify a component using a name defined in the component registry."
+          },
+          "props": {
+            "type": "object",
+            "description": "Extra prop values for the component."
+          },
+          "x": { "type": "integer" },
+          "y": { "type": "integer" },
+          "w": { "type": "integer" },
+          "h": { "type": "integer" },
+          "coordinationScopes": {
+            "type": "object",
+            "description": "Component-level coordination scope mappings define which coordination object values a particular component can read and write, for each coordination type.",
+            "additionalProperties": false,
+            "required": [],
+            "properties": {
+              "dataset": { "type": "string" },
+              "embeddingType": { "type": "string" },
+              "embeddingZoom": { "type": "string" },
+              "embeddingRotation": { "type": "string" },
+              "embeddingTargetX": { "type": "string" },
+              "embeddingTargetY": { "type": "string" },
+              "embeddingTargetZ": { "type": "string" },
+              "embeddingCellSetPolygonsVisible": { "type": "string" },
+              "embeddingCellSetLabelsVisible": { "type": "string" },
+              "embeddingCellSetLabelSize": { "type": "string" },
+              "embeddingCellRadius": { "type": "string" },
+              "spatialZoom": { "type": "string" },
+              "spatialRotation": { "type": "string" },
+              "spatialTargetX": { "type": "string" },
+              "spatialTargetY": { "type": "string" },
+              "spatialTargetZ": { "type": "string" },
+              "spatialRotationX": { "type": "string" },
+              "spatialRotationY": { "type": "string" },
+              "spatialRotationZ": { "type": "string" },
+              "spatialRotationOrbit": { "type": "string" },
+              "spatialOrbitAxis": { "type": "string" },
+              "spatialAxisFixed": { "type": "string" },
+              "heatmapZoomX": { "type": "string" },
+              "heatmapZoomY": { "type": "string" },
+              "heatmapTargetX": { "type": "string" },
+              "heatmapTargetY": { "type": "string" },
+              "cellFilter": { "type": "string" },
+              "cellHighlight": { "type": "string" },
+              "cellSetSelection": { "type": "string" },
+              "cellSetHighlight": { "type": "string" },
+              "cellSetColor": { "type": "string" },
+              "geneFilter": { "type": "string" },
+              "geneHighlight": { "type": "string" },
+              "geneSelection": { "type": "string" },
+              "geneExpressionTransform": { "type": "string" },
+              "geneExpressionColormap": { "type": "string" },
+              "geneExpressionColormapRange": { "type": "string" },
+              "cellColorEncoding": { "type": "string" },
+              "spatialRasterLayers": { "type": "string" },
+              "spatialCellsLayer": { "type": "string" },
+              "spatialMoleculesLayer": { "type": "string" },
+              "spatialNeighborhoodsLayer": { "type": "string" },
+              "genomicZoomX": { "type": "string" },
+              "genomicZoomY": { "type": "string" },
+              "genomicTargetX": { "type": "string" },
+              "genomicTargetY": { "type": "string" },
+              "additionalCellSets": { "type": "string" },
+              "moleculeHighlight": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "annDataCellSets": {
+      "type": "array",
+      "description": "Array of cell set configuration, following closely the conventions of the tabular schema",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["groupName", "setName"],
+        "properties": {
+          "groupName": {
+            "type": "string",
+            "description": "The display name for the set, like 'Cell Type' or 'Louvain.'"
+          },
+          "setName": {
+            "type": "string",
+            "description": "The location in the AnnData store for the set, like 'obs/louvain' or 'obs/celltype.'"
+          }
+        }
+      }
+    },
+    "annData": {
+      "type": "object",
+      "description": "The properties of this object are the configuration for how to layout scatterplots and spatial information",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "xy": {
+          "type": "string",
+          "description": "The location in the AnnData store of cell centroids, like 'obsm/X_centroids.'"
+        },
+        "poly": {
+          "type": "string",
+          "description": "The location in the AnnData store of cell polygon outlines, like 'obsm/X_polygons.'"
+        },
+        "factors": {
+          "type": "array",
+          "description": "List of locations in the AnnData store of cell sets, like 'obs/louvain'",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mappings": {
+          "patternProperties": {
+            ".": {
+              "type": "object",
+              "description": "An object containing key-values for mappings like { UMAP: { key: 'obsm/X_umap', dims: [0, 1] } }.",
+              "additionalProperties": false,
+              "required": ["key"],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Where to look in the AnnData store for this mapping, like 'obsm/X_umap.'"
+                },
+                "dims": {
+                  "type": "array",
+                  "description": "Which indices of the obsm object to take for a scatterplot, allowing for, for example, different PCs from obsm/X_pca",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "matrix": {
+          "type": "string",
+           "description": "The location in the AnnData store of the cell x gene matrix, like 'obsm/hvg_subset.' or 'X'"
+        },
+        "geneFilter": {
+          "type": "string",
+           "description": "The location in the AnnData store of a filter for the genes if using a subset of the data, like 'var.highly_variable.' if the matrix comes from 'obsm/hvg_subset.'"
+        },
+        "matrixGeneFilter": {
+          "type": "string",
+           "description": "The location in the AnnData store of a filter for the matrix data (used in heatmap and histogram), like 'var.highly_variable.''"
+        },
+        "cellSets": { "$ref": "#/definitions/annDataCellSets" }
+      }
+    },
+    "requestInit": {
+      "type": "object",
+      "description": "The properties of this object correspond to the parameters of the JavaScript fetch() function.",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "object"
+        },
+        "body": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "credentials": {
+          "type": "string"
+        },
+        "cache": {
+          "type": "string"
+        },
+        "redirect": {
+          "type": "string"
+        },
+        "referrer": {
+          "type": "string"
+        },
+        "integrity": {
+          "type": "string"
+        }
+      }
+    },
+    "rasterLayer": {
+      "description": "The properties of this object are the rendering settings for the raster layer.",
+      "additionalProperties": false,
+      "required": ["channels", "colormap", "index", "opacity"],
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["selection"],
+            "properties": {
+              "color": {
+                "type": "array",
+                "items": { "type": "number" },
+                "description": "The color to use when rendering this channel under the null colormap."
+              },
+              "selection": {
+                "type": "object",
+                "description": "Determines the channel selection, e.g. some Z and time slice."
+              },
+              "slider": {
+                "type": "array",
+                "items": { "type": "number" },
+                "description": "Determines the range for color mapping."
+              },
+              "visible": {
+                "type": "boolean",
+                "description": "Determines whether this channel of the layer will be rendered in the spatial component."
+              }
+            }
+          }
+        },
+        "colormap": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "The name of the colormap to use for this layer."
+            },
+            {
+              "type": "null",
+              "description": "Use the solid color definitions."
+            }
+          ]
+        },
+        "transparentColor": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { 
+                "type": "number",
+                "description": "One of R G or B (0 - 255)." 
+              },
+              "description": "Determines the color to be set to opacity 0"
+            },
+            {
+              "type": "null",
+              "description": "No selection."
+            }
+          ]
+        },
+        "index": {
+          "type": "number",
+          "description": "The index of the layer among the array of layers available in the image file."
+        },
+        "opacity": {
+          "type": "number"
+        },
+        "modelMatrix": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 16,
+              "maxItems": 16,
+              "description": "transformation matrix for this layer"
+            },
+            {
+              "type": "null",
+              "description": "Use no transformation."
+            }
+          ]
+        },
+        "domainType": {
+          "type": "string",
+          "enum": ["Full", "Min/Max"],
+          "description": "Determines the extent of the channel slider input element in the layer controller."
+        },
+        "resolution": {
+          "type": "number",
+          "description": "Resolution of 3D volumetric rendering"
+        },
+        "xSlice": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Slice bounds"
+            },
+            {
+              "type": "null",
+              "description": "No slicing"
+            }
+          ]
+        },
+        "renderingMode": {
+          "type": "string",
+           "description": "Rendering mode of 3D volumetric rendering"
+        },
+        "ySlice": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Slice bounds"
+            },
+            {
+              "type": "null",
+              "description": "No slicing"
+            }
+          ]
+        },
+        "zSlice": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Slice bounds"
+            },
+            {
+              "type": "null",
+              "description": "No slicing"
+            }
+          ]
+        },
+        "type": {
+          "type": "string"
+        },
+        "use3d": {
+          "type": "boolean"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Determines whether this entire layer will be rendered in the spatial component."
+        }
+      }
+    },
+    "moleculesLayer": {
+      "type": "object",
+      "description": "The properties of this object are the rendering settings for the molecules layer.",
+      "additionalProperties": false,
+      "required": ["visible", "radius", "opacity"],
+      "properties": {
+        "visible": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "opacity": {
+          "type": "number"
+        }
+      }
+    },
+    "cellsLayer": {
+      "type": "object",
+      "description": "The properties of this object are the rendering settings for the cells layer.",
+      "additionalProperties": false,
+      "required": ["visible", "stroked", "radius", "opacity"],
+      "properties": {
+        "visible": {
+          "type": "boolean"
+        },
+        "stroked": {
+          "type": "boolean"
+        },
+        "radius": {
+          "type": "number"
+        },
+        "opacity": {
+          "type": "number"
+        }
+      }
+    },
+    "neighborhoodsLayer": {
+      "type": "object",
+      "description": "The properties of this object are the rendering settings for the neighborhoods layer.",
+      "additionalProperties": false,
+      "required": ["visible"],
+      "properties": {
+        "visible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "spatialRasterLayers": {
+      "type": "array",
+      "description": "Array of Spatial Layers",
+      "items": {
+        "$ref": "#/definitions/rasterLayer"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["version", "name", "datasets", "layout", "initStrategy"],
+  "properties": {
+    "name": { "type": "string" },
+    "public": { "type": "boolean" },
+    "description": { "type": "string" },
+    "datasets": {
+      "type": "array",
+      "description": "The datasets array defines groups of files, where the files within each dataset reference the same entities (cells, genes, cell sets, etc).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["uid", "files"],
+        "properties": {
+          "uid": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "fileType"],
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "oneOf": [{ "type": "string" }, {"type": "array", "items": { "type": "string" }}] },
+                "fileType": { "type": "string" },
+                "url": { "type": "string" },
+                "options": { "oneOf": [{ "$ref": "#/definitions/annData" }, { "$ref": "https://github.com/hubmapconsortium/vitessce/#raster" }] },
+                "requestInit": { "$ref": "#/definitions/requestInit" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "coordinationSpace": {
+      "type": "object",
+      "description": "The coordination space stores the values for each scope of each coordination object.",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "dataset": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "string" }
+          }
+        },
+        "embeddingZoom": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "embeddingRotation": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "embeddingTargetX": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "embeddingTargetY": {
+          "type": "object",
+          "patternProperties": {
+            ".":  { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "embeddingTargetZ": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "embeddingType": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "string" }
+          }
+        },
+        "embeddingCellSetPolygonsVisible": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "boolean" }
+          }
+        },
+        "embeddingCellSetLabelsVisible": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "boolean" }
+          }
+        },
+        "embeddingCellSetLabelSize": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "embeddingCellRadius": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "spatialZoom": {
+          "type": "object",
+          "patternProperties": {
+            ".":  { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialRotation": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "spatialTargetX": {
+          "type": "object",
+          "patternProperties": {
+            ".":  { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialTargetY": {
+          "type": "object",
+          "patternProperties": {
+            ".":  { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialTargetZ": {
+          "type": "object",
+          "patternProperties": {
+            ".":  { "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialRotationX": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set. Only useful for 3D viewing."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialRotationY": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set. Only useful for 3D viewing."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialRotationZ": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set. Only useful for 3D viewing."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+         "spatialRotationOrbit": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set. Only useful for 3D viewing."
+                },
+                { "type": "number" }
+              ]
+            }
+          }
+        },
+        "spatialOrbitAxis": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, value will be automatically set. Only useful for 3D viewing."
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        },
+        "spatialAxisFixed": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "Whether or not to have a fixed axis for the camera. Only useful for 3D viewing."
+                },
+                { "type": "boolean" }
+              ]
+            }
+          }
+        },
+        "spatialRasterLayers": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided and auto layer initialization is enabled, layers will be automatically initialized."
+                },
+                { "$ref": "#/definitions/spatialRasterLayers" }
+              ]
+            }
+          }
+        },
+        "spatialCellsLayer": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided and auto layer initialization is enabled, layers will be automatically initialized."
+                },
+                { "$ref": "#/definitions/cellsLayer" }
+              ]
+            }
+          }
+        },
+        "spatialNeighborhoodsLayer": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided and auto layer initialization is enabled, layers will be automatically initialized."
+                },
+                { "$ref": "#/definitions/neighborhoodsLayer" }
+              ]
+            }
+          }
+        },
+        "spatialMoleculesLayer": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided and auto layer initialization is enabled, layers will be automatically initialized."
+                },
+                { "$ref": "#/definitions/moleculesLayer" }
+              ]
+            }
+          }
+        },
+        "heatmapZoomX": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "heatmapZoomY": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "heatmapTargetX": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "heatmapTargetY": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "cellFilter": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no cells will be filtered out initially."
+                },
+                { "type": "array", "items": { "type": "string" } }
+              ]
+            }
+          }
+        },
+        "cellHighlight": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no cell will be highlighted initially."
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        },
+        "cellSetSelection": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided and auto cell set initialization is enabled, cell set selections will be automatically initialized."
+                },
+                { "type": "array" }
+              ]
+            }
+          }
+        },
+        "cellSetHighlight": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no cell sets will be highlighted initially."
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        },
+        "cellSetColor": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, cell set colors will be automatically initialized."
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["path", "color"],
+                    "properties": {
+                      "path": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "color": {
+                        "type": "array",
+                        "items": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "cellColorEncoding": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "string" }
+          }
+        },
+        "geneFilter": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no genes will be filtered out initially."
+                },
+                { "type": "array", "items": { "type": "string" } }
+              ]
+            }
+          }
+        },
+        "geneHighlight": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no genes will be highlighted initially."
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        },
+        "geneSelection": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                { "type": "array", "items": { "type": "string" } }
+              ]
+            }
+          }
+        },
+        "geneExpressionTransform": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                { "type": "string", "pattern": "log1p" }
+              ]
+            }
+          }
+        },
+        "geneExpressionColormap": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "string" }
+          }
+        },
+        "geneExpressionColormapRange": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "array", "items": { "type": "number" } }
+          }
+        },
+        "genomicZoomX": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "genomicZoomY": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "genomicTargetX": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "genomicTargetY": {
+          "type": "object",
+          "patternProperties": {
+            ".": { "type": "number" }
+          }
+        },
+        "additionalCellSets": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no cell will be highlighted initially."
+                },
+                {
+                  "$ref": "https://github.com/hubmapconsortium/vitessce/#cell-sets"
+                }
+              ]
+            }
+          }
+        },
+        "moleculeHighlight": {
+          "type": "object",
+          "patternProperties": {
+            ".": {
+              "oneOf": [
+                {
+                  "type": "null",
+                  "description": "If null is provided, no molecule will be highlighted initially."
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "layout": { "$ref": "#/definitions/components" },
+    "initStrategy": {
+      "type": "string",
+      "enum": ["none", "auto"],
+      "description": "The initialization strategy determines how missing coordination objects and coordination scope mappings are initially filled in."
+    },
+    "version": {
+      "type": "string",
+      "enum": ["1.0.2"],
+      "description": "The schema version for the view config."
+    }
+  }
+}

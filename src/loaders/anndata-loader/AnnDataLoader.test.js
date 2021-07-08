@@ -1,10 +1,10 @@
 import expect from 'expect';
-import BaseAnnDataLoader from './BaseAnnDataLoader';
+import AnnDataLoader from './AnnDataLoader';
 
 
-describe('loaders/BaseAnnDataLoader', () => {
+describe('loaders/AnnDataLoader', () => {
   it('getJson reutrns json', async () => {
-    const loader = new BaseAnnDataLoader({
+    const loader = new AnnDataLoader({
       url: 'http://127.0.0.1:8080/anndata/anndata-dense.zarr',
     });
     const zGroup = await loader.getJson('.zgroup');
@@ -12,7 +12,7 @@ describe('loaders/BaseAnnDataLoader', () => {
   });
 
   it('loadCellSetIds returns ids for location in store', async () => {
-    const loader = new BaseAnnDataLoader({
+    const loader = new AnnDataLoader({
       url: 'http://127.0.0.1:8080/anndata/anndata-dense.zarr',
     });
     const ids = await loader.loadCellSetIds(['obs/leiden']);
@@ -20,7 +20,7 @@ describe('loaders/BaseAnnDataLoader', () => {
   });
 
   it('loadCellNames returns names', async () => {
-    const loader = new BaseAnnDataLoader({
+    const loader = new AnnDataLoader({
       url: 'http://127.0.0.1:8080/anndata/anndata-dense.zarr',
     });
     const names = await loader.loadCellNames();

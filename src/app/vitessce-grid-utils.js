@@ -104,7 +104,14 @@ export function createLoaders(datasets, configDescription) {
       // Fall back to JsonLoader if a loader is not found for the file type.
       const matchingLoaderClass = fileTypeToLoader[file.fileType] || JsonLoader;
       // eslint-disable-next-line new-cap
-      datasetLoaders.loaders[file.type] = new matchingLoaderClass(file);
+      const loader = new matchingLoaderClass(file);
+      if (Array.isArray(file.type)) {
+        file.type.forEach((type) => {
+          datasetLoaders.loaders[type] = loader;
+        });
+      } else {
+        datasetLoaders.loaders[file.type] = loader;
+      }
     });
     result[dataset.uid] = datasetLoaders;
   });

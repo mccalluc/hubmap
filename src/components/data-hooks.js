@@ -120,7 +120,7 @@ export function useCellsData(
     }
 
     if (loaders[dataset].loaders.cells) {
-      loaders[dataset].loaders.cells.load().catch(e => warn(e, setWarning)).then((payload) => {
+      loaders[dataset].loaders.cells.load('cells').catch(e => warn(e, setWarning)).then((payload) => {
         if (!payload) return;
         const { data, url, coordinationValues } = payload;
         setCells(data);
@@ -192,7 +192,7 @@ export function useCellSetsData(
 
     if (loaders[dataset].loaders['cell-sets']) {
       // Load the data initially.
-      loaders[dataset].loaders['cell-sets'].load().catch(e => warn(e, setWarning)).then((payload) => {
+      loaders[dataset].loaders['cell-sets'].load('cell-sets').catch(e => warn(e, setWarning)).then((payload) => {
         if (!payload) return;
         const { data, url, coordinationValues } = payload;
         setCellSets(data);
@@ -259,7 +259,7 @@ export function useExpressionMatrixData(
     }
 
     if (loaders[dataset].loaders['expression-matrix']) {
-      loaders[dataset].loaders['expression-matrix'].load().catch(e => warn(e, setWarning)).then((payload) => {
+      loaders[dataset].loaders['expression-matrix'].load('expression-matrix').catch(e => warn(e, setWarning)).then((payload) => {
         if (!payload) return;
         const { data, url, coordinationValues } = payload;
         const [attrs, arr] = data;
@@ -332,7 +332,7 @@ export function useGeneSelection(loaders, dataset, setItemIsReady, isRequired, s
             setGeneData(data);
           });
       } else {
-        loader.load().catch(e => warn(e, setWarning)).then((payload) => {
+        loader.load('expression-matrix').catch(e => warn(e, setWarning)).then((payload) => {
           if (!payload) return;
           const { data } = payload;
           const [attrs, { data: matrix }] = data;
@@ -402,7 +402,7 @@ export function useExpressionAttrs(loaders, dataset, setItemIsReady, addUrl, isR
           setItemIsReady('expression-matrix');
         });
       } else {
-        loader.load().catch(e => warn(e, setWarning)).then((payload) => {
+        loader.load('expression-matrix').catch(e => warn(e, setWarning)).then((payload) => {
           if (!payload) return;
           const { data, url } = payload;
           setAttrs(data[0]);
@@ -466,7 +466,7 @@ export function useMoleculesData(
     }
 
     if (loaders[dataset].loaders.molecules) {
-      loaders[dataset].loaders.molecules.load().catch(e => warn(e, setWarning)).then((payload) => {
+      loaders[dataset].loaders.molecules.load('molecules').catch(e => warn(e, setWarning)).then((payload) => {
         if (!payload) return;
         const { data, url, coordinationValues } = payload;
         setMolecules(data);
@@ -540,7 +540,7 @@ export function useNeighborhoodsData(
     }
 
     if (loaders[dataset].loaders.neighborhoods) {
-      loaders[dataset].loaders.neighborhoods.load().catch(e => warn(e, setWarning))
+      loaders[dataset].loaders.neighborhoods.load('neighborhoods').catch(e => warn(e, setWarning))
         .then((payload) => {
           if (!payload) return;
           const { data, url, coordinationValues } = payload;
@@ -617,7 +617,7 @@ export function useRasterData(
     }
 
     if (loaders[dataset].loaders.raster) {
-      loaders[dataset].loaders.raster.load().catch(e => warn(e, setWarning)).then((payload) => {
+      loaders[dataset].loaders.raster.load('raster').catch(e => warn(e, setWarning)).then((payload) => {
         if (!payload) return;
         const { data, url: urls, coordinationValues } = payload;
         setRaster(data);
@@ -688,7 +688,7 @@ export function useGenomicProfilesData(
     }
 
     if (loaders[dataset].loaders['genomic-profiles']) {
-      loaders[dataset].loaders['genomic-profiles'].load().catch(e => warn(e, setWarning))
+      loaders[dataset].loaders['genomic-profiles'].load('genomic-profiles').catch(e => warn(e, setWarning))
         .then((payload) => {
           if (!payload) return;
           const { data, url, coordinationValues } = payload;

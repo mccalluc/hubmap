@@ -5,10 +5,8 @@ import ClustersJsonAsMatrixZarrLoader from './ClustersJsonAsMatrixZarrLoader';
 import RasterJsonLoader from './RasterJsonLoader';
 import OmeZarrLoader from './OmeZarrLoader';
 import CellSetsJsonLoader from './CellSetsJsonLoader';
-import AnnDataLoaders from './anndata-loaders';
+import AnnDataLoader from './anndata-loader';
 import GenomicProfilesZarrLoader from './GenomicProfilesZarrLoader';
-
-const ANNDATA = 'anndata';
 
 export const fileTypeToLoader = {
   'expression-matrix.zarr': MatrixZarrLoader,
@@ -20,8 +18,6 @@ export const fileTypeToLoader = {
   'raster.json': RasterJsonLoader,
   'raster.ome-zarr': OmeZarrLoader,
   'cell-sets.json': CellSetsJsonLoader,
-  [`${ANNDATA}-cell-sets.zarr`]: AnnDataLoaders.CellSetsZarrLoader,
-  [`${ANNDATA}-cells.zarr`]: AnnDataLoaders.CellsZarrLoader,
-  [`${ANNDATA}-expression-matrix.zarr`]: AnnDataLoaders.MatrixZarrLoader,
+  'anndata.zarr': AnnDataLoader,
   'genomic-profiles.zarr': GenomicProfilesZarrLoader,
 };

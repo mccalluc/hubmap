@@ -1,37 +1,211 @@
 /* eslint-disable no-underscore-dangle */
 import { openArray, slice } from 'zarr';
-import { extent } from 'd3-array';
-import BaseAnnDataLoader from './BaseAnnDataLoader';
+import range from 'lodash/range';
+import AbstractZarrLoader from '../AbstractZarrLoader';
+import { parseVlenUtf8, normalize, concatenateColumnVectors } from './utils';
+import {
+  treeInitialize,
+  nodeAppendChild,
+  initializeCellSetColor,
+} from '../../components/sets/cell-set-utils';
+import { SETS_DATATYPE_CELL } from '../../components/sets/constants';
 import LoaderResult from '../LoaderResult';
-
-const normalize = (arr) => {
-  const [min, max] = extent(arr);
-  const ratio = 255 / (max - min);
-  const data = new Uint8Array(
-    arr.map(i => Math.floor((i - min) * ratio)),
-  );
-  return { data };
-};
-
-const concatenateColumnVectors = (arr) => {
-  const numCols = arr.length;
-  const numRows = arr[0].length;
-  const { BYTES_PER_ELEMENT } = arr[0];
-  const view = new DataView(new ArrayBuffer(numCols * numRows * BYTES_PER_ELEMENT));
-  const TypedArray = arr[0].constructor;
-  const dtype = TypedArray.name.replace('Array', '');
-  for (let i = 0; i < numCols; i += 1) {
-    for (let j = 0; j < numRows; j += 1) {
-      view[`set${dtype}`](BYTES_PER_ELEMENT * (j * numCols + i), arr[i][j], true);
-    }
-  }
-  return new TypedArray(view.buffer);
-};
-
+import { LoaderValidationError } from '../errors';
 /**
- * Loader for converting zarr into the a cell x gene matrix for use in Genes/Heatmap components.
+ * A base AnnData loader which has all shared methods for more comlpex laoders,
+ * like loading cell names and ids. It inherits from AbstractLoader.
  */
-export default class MatrixZarrLoader extends BaseAnnDataLoader {
+export default class AnnDataLoader extends AbstractZarrLoader {
+  /**
+   * Class method for loading cell set ids.
+   * Takes the location as an argument because this is shared across objects,
+   * which have different ways of specifying location.
+   * @param {Array} cellSetZarrLocation An array of strings like obs.leiden or obs.bulk_labels.
+   * @returns {Promise} A promise for an array of ids with one per cell.
+   */
+  loadCellSetIds(cellSetZarrLocation) {
+    const { store } = this;
+    if (!this.cellSets) {
+      this.cellSets = {};
+    } if (cellSetZarrLocation.every(setName => this.cellSets[setName])) {
+      return Promise.all(cellSetZarrLocation.map(setName => this.cellSets[setName]));
+    }
+    cellSetZarrLocation.forEach((setName) => {
+      this.cellSets[setName] = (async () => {
+        const { categories } = await this.getJson(`${setName}/.zattrs`);
+        let categoriesValues;
+        if (categories) {
+          const { dtype } = await this.getJson(`/obs/${categories}/.zarray`);
+          if (dtype === '|O') {
+            categoriesValues = await this.getFlatArrDecompressed(`/obs/${categories}`);
+          }
+        }
+        const cellSetsArr = await openArray({
+          store,
+          path: setName,
+          mode: 'r',
+        });
+        const cellSetsValues = await cellSetsArr.get();
+        const { data } = cellSetsValues;
+        const mappedCellSetValues = Array.from(data).map(
+          i => (!categoriesValues ? String(i) : categoriesValues[i]),
+        );
+        return mappedCellSetValues;
+      })();
+    });
+    return Promise.all(cellSetZarrLocation.map(setName => this.cellSets[setName]));
+  }
+
+  /**
+   * Class method for loading general numeric arrays.
+   * @param {string} path A string like obsm.X_pca.
+   * @returns {Promise} A promise for a zarr array containing the data.
+   */
+  loadNumeric(path) {
+    const { store } = this;
+    return openArray({
+      store,
+      path,
+      mode: 'r',
+    }).then(arr => arr.get());
+  }
+
+  getFlatArrDecompressed(path) {
+    const { store } = this;
+    return openArray({
+      store,
+      path,
+      mode: 'r',
+    }).then(async (z) => {
+      let data;
+      const parseAndMergeTextBytes = (dbytes) => {
+        const text = parseVlenUtf8(dbytes);
+        if (!data) {
+          data = text;
+        } else {
+          data = data.concat(text);
+        }
+      };
+      const mergeBytes = (dbytes) => {
+        if (!data) {
+          data = dbytes;
+        } else {
+          const tmp = new Uint8Array(
+            dbytes.buffer.byteLength + data.buffer.byteLength,
+          );
+          tmp.set(new Uint8Array(data.buffer), 0);
+          tmp.set(dbytes, data.buffer.byteLength);
+          data = tmp;
+        }
+      };
+      const numRequests = Math.ceil(z.meta.shape[0] / z.meta.chunks[0]);
+      const requests = range(numRequests).map(async item => store
+        .getItem(`${z.keyPrefix}${String(item)}`)
+        .then(buf => z.compressor.then(compressor => compressor.decode(buf))));
+      const dbytesArr = await Promise.all(requests);
+      dbytesArr.forEach((dbytes) => {
+        // Use vlenutf-8 decoding if necessary and merge `data` as a normal array.
+        if (
+          Array.isArray(z.meta.filters)
+          && z.meta.filters[0].id === 'vlen-utf8'
+        ) {
+          parseAndMergeTextBytes(dbytes);
+          // Otherwise just merge the bytes as a typed array.
+        } else {
+          mergeBytes(dbytes);
+        }
+      });
+      const {
+        meta: {
+          shape: [length],
+        },
+      } = z;
+      // truncate the filled in values
+      return data.slice(0, length);
+    });
+  }
+
+  /**
+   * Class method for loading the cell names from obs.
+   * @returns {Promise} An promise for a zarr array containing the names.
+   */
+  loadCellNames() {
+    if (this.cellNames) {
+      return this.cellNames;
+    }
+    this.cellNames = this.getJson('obs/.zattrs').then(({ _index }) => this.getFlatArrDecompressed(`/obs/${_index}`));
+    return this.cellNames;
+  }
+
+  /**
+   * Class method for loading spatial cell centroids.
+   * @returns {Promise} A promise for an array of tuples/triples for cell centroids.
+   */
+  loadXy() {
+    const { xy } = this.options || {};
+    if (this.xy) {
+      return this.xy;
+    }
+    if (!this.xy && xy) {
+      this.xy = this.loadNumeric(xy);
+      return this.xy;
+    }
+    this.xy = Promise.resolve(null);
+    return this.xy;
+  }
+
+  /**
+   * Class method for loading spatial cell polygons.
+   * @returns {Promise} A promise for an array of arrays for cell polygons.
+   */
+  loadPoly() {
+    const { poly } = this.options || {};
+    if (this.poly) {
+      return this.poly;
+    }
+    if (!this.poly && poly) {
+      this.poly = this.loadNumeric(poly);
+      return this.poly;
+    }
+    this.poly = Promise.resolve(null);
+    return this.poly;
+  }
+
+  /**
+   * Class method for loading various mappings, like UMAP or tSNE cooridnates.
+   * @returns {Promise} A promise for an array of tuples of coordinates.
+   */
+  loadMappings() {
+    const { mappings } = this.options || {};
+    if (this.mappings) {
+      return this.mappings;
+    }
+    if (!this.mappings && mappings) {
+      this.mappings = Promise.all(
+        Object.keys(mappings).map(async (coordinationName) => {
+          const { key } = mappings[coordinationName];
+          return { coordinationName, arr: await this.loadNumeric(key) };
+        }),
+      );
+      return this.mappings;
+    }
+    this.mappings = Promise.resolve(null);
+    return this.mappings;
+  }
+
+  /**
+   * Class method for loading factors, which are cell set ids.
+   * @returns {Promise} A promise for an array of an array of strings of ids,
+   * where subarray is a clustering/factor.
+   */
+  loadFactors() {
+    const { factors } = this.options || {};
+    if (factors) {
+      return this.loadCellSetIds(factors);
+    }
+    return Promise.resolve(null);
+  }
+
   /**
    * Class method for loading the genes list from AnnData.var.
    * @returns {Promise} A promise for the zarr array contianing the gene names.
@@ -286,8 +460,10 @@ export default class MatrixZarrLoader extends BaseAnnDataLoader {
       );
     } else {
       const genes = await this._getFilteredGenes(matrixGeneFilter);
-      this.cellXGene = this.loadGeneSelection({ selection: genes, shouldNormalize: false })
-        .then(({ data }) => (normalize(concatenateColumnVectors(data))));
+      this.cellXGene = this.loadGeneSelection({
+        selection: genes,
+        shouldNormalize: false,
+      }).then(({ data }) => normalize(concatenateColumnVectors(data)));
     }
     return this.cellXGene;
   }
@@ -323,7 +499,10 @@ export default class MatrixZarrLoader extends BaseAnnDataLoader {
         indices.map(index => this.arr.then(z => z.get([null, index])).then(({ data }) => data)),
       );
     }
-    return { data: genes.map(i => (shouldNormalize ? normalize(i).data : i)), url: null };
+    return {
+      data: genes.map(i => (shouldNormalize ? normalize(i).data : i)),
+      url: null,
+    };
   }
 
   /**
@@ -344,7 +523,7 @@ export default class MatrixZarrLoader extends BaseAnnDataLoader {
     );
   }
 
-  load() {
+  loadExpressionMatrix() {
     return Promise.all([this.loadAttrs(), this.loadCellXGene()]).then(
       async (d) => {
         const [{ data: attrs }, cellXGene] = d;
@@ -362,5 +541,109 @@ export default class MatrixZarrLoader extends BaseAnnDataLoader {
         return Promise.resolve(new LoaderResult([attrs, cellXGene], null));
       },
     );
+  }
+
+  async loadCellSets() {
+    if (!this.cellSetsTree) {
+      const { options } = this;
+      // eslint-disable-next-line camelcase
+      const cellSetZarrLocation = options.cellSets.map(({ setName }) => setName);
+      this.cellSetsTree = Promise.all([
+        this.loadCellNames(),
+        this.loadCellSetIds(cellSetZarrLocation),
+      ]).then((data) => {
+        const [cellNames, cellSets] = data;
+        const cellSetsTree = treeInitialize(SETS_DATATYPE_CELL);
+        cellSets.forEach((cellSetIds, j) => {
+          const name = options.cellSets[j].groupName;
+          let levelZeroNode = {
+            name,
+            children: [],
+          };
+          const uniqueCellSetIds = Array(...new Set(cellSetIds)).sort();
+          const clusters = {};
+          // eslint-disable-next-line no-return-assign
+          uniqueCellSetIds.forEach(id => (clusters[id] = { name: id, set: [] }));
+          cellSetIds.forEach((id, i) => clusters[id].set.push([cellNames[i], null]));
+          Object.values(clusters).forEach(
+            // eslint-disable-next-line no-return-assign
+            cluster => (levelZeroNode = nodeAppendChild(levelZeroNode, cluster)),
+          );
+          cellSetsTree.tree.push(levelZeroNode);
+        });
+        return cellSetsTree;
+      });
+    }
+    const cellSetsTree = await this.cellSetsTree;
+    const coordinationValues = {};
+    const { tree } = cellSetsTree;
+    const newAutoSetSelectionParentName = tree[0].name;
+    // Create a list of set paths to initally select.
+    const newAutoSetSelections = tree[0].children.map(node => [
+      newAutoSetSelectionParentName,
+      node.name,
+    ]);
+    // Create a list of cell set objects with color mappings.
+    const newAutoSetColors = initializeCellSetColor(cellSetsTree, []);
+    coordinationValues.cellSetSelection = newAutoSetSelections;
+    coordinationValues.cellSetColor = newAutoSetColors;
+    return Promise.resolve(
+      new LoaderResult(cellSetsTree, null, coordinationValues),
+    );
+  }
+
+  async loadCells() {
+    if (!this.cells) {
+      this.cells = Promise.all([
+        this.loadMappings(),
+        this.loadXy(),
+        this.loadPoly(),
+        this.loadCellNames(),
+        this.loadFactors(),
+      ]).then(([mappings, xy, poly, cellNames, factors]) => {
+        const cells = {};
+        cellNames.forEach((name, i) => {
+          cells[name] = {};
+          if (mappings) {
+            mappings.forEach(({ coordinationName, arr }) => {
+              if (!cells[name].mappings) {
+                cells[name].mappings = {};
+              }
+              const { dims } = this.options.mappings[coordinationName];
+              cells[name].mappings[coordinationName] = dims.map(
+                dim => arr.data[i][dim],
+              );
+            });
+          }
+          if (xy) {
+            cells[name].xy = xy.data[i];
+          }
+          if (poly) {
+            cells[name].poly = poly.data[i];
+          }
+          if (factors) {
+            const factorsObj = {};
+            factors.forEach(
+              // eslint-disable-next-line no-return-assign
+              (factor, j) => (factorsObj[this.options.factors[j].split('/').slice(-1)] = factor[i]),
+            );
+            cells[name].factors = factorsObj;
+          }
+        });
+        return cells;
+      });
+    }
+    return Promise.resolve(new LoaderResult(await this.cells, null));
+  }
+
+  load(type) {
+    if (type === 'expression-matrix') {
+      return this.loadExpressionMatrix();
+    } if (type === 'cell-sets') {
+      return this.loadCellSets();
+    } if (type === 'cells') {
+      return this.loadCells();
+    }
+    throw new LoaderValidationError(`AnnData loader does not support type ${type}`);
   }
 }
