@@ -29,6 +29,7 @@
   - Modify the cache to use an array of tuples, since using an array as an object key results in conversion to string.
 - Clean up `getFlatArrDecompressed` fetching.
 - Fix bitmask remove button style.
+- Offsets error message gives the URL that failed, and the HTTP status.
 - Don't show 3D dropdown if only 2D is available.
 - Don't show Volume tab (or any tabs) when 3D is not available.
 

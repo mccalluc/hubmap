@@ -57,7 +57,7 @@ async function initLoader(imageData) {
             },
           );
         } else {
-          throw new Error('Offsets not found but provided.');
+          throw new Error(`Offsets not found but provided: ${res.status} from ${res.url}`);
         }
       } else {
         loader = await loadOmeTiff(url, { headers: requestInit?.headers });
